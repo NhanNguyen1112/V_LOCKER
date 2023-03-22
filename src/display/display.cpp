@@ -1,7 +1,11 @@
 #include "vhitek.h"
-
 namespace VHITEK
 {
+    #define LCD_RESET 4  // RST on LCD
+    #define LCD_CS 2     // RS on LCD
+    #define LCD_CLOCK 19 // E on LCD
+    #define LCD_DATA 21  // R/W on LCD
+
     U8G2_ST7920_128X64_F_HW_SPI u8g2(U8G2_R0, /* CS=*/LCD_CS, /* reset=*/LCD_RESET);
 
     namespace Display
@@ -68,6 +72,29 @@ namespace VHITEK
             u8g2.printf(logoTSE);                 
             u8g2.sendBuffer();
         }
+        void hienthiLOGO() //hiện logo TSE or VHITEK
+        {
+            u8g2.setFont(u8g2_font_resoledbold_tr);
+            #ifdef logoTSE
+            u8g2.setCursor(10,60);
+            u8g2.printf(logoTSE);
+            #else 
+            u8g2.setCursor(35,60);
+            u8g2.printf(logoVHITEK);
+            #endif
+        }
+        void TB_2_sotu_bangnhau()
+        {
+            u8g2.clearBuffer();    
+            u8g2.setFont(u8g2_font_resoledbold_tr);
+            u8g2.setCursor(18,25);
+            u8g2.printf("2 SO TU VUA NHAP");  
+            u8g2.setCursor(40,35);
+            u8g2.printf("BANG NHAU");   
+            u8g2.setCursor(18,45);
+            u8g2.printf("XIN MOI NHAP LAI");                       
+            u8g2.sendBuffer();            
+        }
 
 #ifdef mocua
         void hien_ngay_gio() //Hien thi ngay, gio tai man hinh chinh
@@ -90,7 +117,7 @@ namespace VHITEK
             if(check == 0)
             {
                 u8g2.setCursor(35,10);
-                u8g2.printf("%02d/%02d/%02d", thoi_gian.ngay, thoi_gian.thang,thoi_gian.nam);   
+                u8g2.printf("%02d/%02d/%d", thoi_gian.ngay, thoi_gian.thang,thoi_gian.nam);   
             }
             else 
             {

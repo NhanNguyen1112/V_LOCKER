@@ -31,63 +31,63 @@ namespace VHITEK
             Serial.println();
         }
 
-        void luu_hanh_dong(uint16_t so_tu, uint8_t trang_thai)
-        {
-            hanh_dong giao_dich; 
-            user_setting user_ID;
-            uint16_t o_luu_ID = VHITEK::Menu::tinh_o_luu_the(so_tu);
-            accessI2C1Bus([&]{
-                    myMem.get(o_luu_ID, user_ID);
-            }, 100);             
+        // void luu_hanh_dong(uint16_t so_tu, uint8_t trang_thai)
+        // {
+        //     hanh_dong giao_dich; 
+        //     user_setting user_ID;
+        //     uint16_t o_luu_ID = VHITEK::Menu::tinh_o_luu_the(so_tu);
+        //     accessI2C1Bus([&]{
+        //             myMem.get(o_luu_ID, user_ID);
+        //     }, 100);             
 
-            giao_dich.IDX = IDX_hien_tai;
-            giao_dich.trang_thai = trang_thai; //trang thai cua
-            giao_dich.so_tu = so_tu;
-            giao_dich.send_data_check = 1; //1: Chua gui; 0: da gui
-            for(int i=0; i<=12; i++)
-            {
-                giao_dich.ID[i] = user_ID.ID_user[i];
-            }
+        //     giao_dich.IDX = IDX_hien_tai;
+        //     giao_dich.trang_thai = trang_thai; //trang thai cua
+        //     giao_dich.so_tu = so_tu;
+        //     giao_dich.send_data_check = 1; //1: Chua gui; 0: da gui
+        //     for(int i=0; i<=12; i++)
+        //     {
+        //         giao_dich.ID[i] = user_ID.ID_user[i];
+        //     }
 
-            giao_dich.ngay = thoi_gian.ngay;
-            giao_dich.thang = thoi_gian.thang;
-            giao_dich.nam = thoi_gian.nam-2000;
-            giao_dich.gio = thoi_gian.gio;
-            giao_dich.phut = thoi_gian.phut;
+        //     giao_dich.ngay = thoi_gian.ngay;
+        //     giao_dich.thang = thoi_gian.thang;
+        //     giao_dich.nam = thoi_gian.nam-2000;
+        //     giao_dich.gio = thoi_gian.gio;
+        //     giao_dich.phut = thoi_gian.phut;
 
-            /*Serial.print("IDX: "); Serial.print(giao_dich.IDX);
-            Serial.print(" - Status: "); Serial.print(giao_dich.trang_thai);
-            Serial.print(" - So tu: "); Serial.print(giao_dich.so_tu);
-            Serial.print(" - Send data: "); Serial.print(giao_dich.send_data_check);
-            Serial.print(" - ID: ");
-            for(int i=0; i<=12; i++)
-            {
-                Serial.print(giao_dich.ID[i]-'0');
-                // Serial.printf("%02X ",giao_dich.ID[i]);
-            }            
+        //     /*Serial.print("IDX: "); Serial.print(giao_dich.IDX);
+        //     Serial.print(" - Status: "); Serial.print(giao_dich.trang_thai);
+        //     Serial.print(" - So tu: "); Serial.print(giao_dich.so_tu);
+        //     Serial.print(" - Send data: "); Serial.print(giao_dich.send_data_check);
+        //     Serial.print(" - ID: ");
+        //     for(int i=0; i<=12; i++)
+        //     {
+        //         Serial.print(giao_dich.ID[i]-'0');
+        //         // Serial.printf("%02X ",giao_dich.ID[i]);
+        //     }            
 
-            Serial.print(" - Ngay: "); Serial.print(giao_dich.ngay);
-            Serial.print(" - Thang: "); Serial.print(giao_dich.thang);
-            Serial.print(" - Nam: "); Serial.print(giao_dich.nam);
-            Serial.print(" | Gio: "); Serial.print(giao_dich.gio);
-            Serial.print(" - Phut: "); Serial.println(giao_dich.phut); */
+        //     Serial.print(" - Ngay: "); Serial.print(giao_dich.ngay);
+        //     Serial.print(" - Thang: "); Serial.print(giao_dich.thang);
+        //     Serial.print(" - Nam: "); Serial.print(giao_dich.nam);
+        //     Serial.print(" | Gio: "); Serial.print(giao_dich.gio);
+        //     Serial.print(" - Phut: "); Serial.println(giao_dich.phut); */
 
-            if(VHITEK::EEPROM::write_eeprom_2(giao_dich)==true) //Neu ghi duoc vao EEPROM
-            {
-                // Serial.println("Dung");
-                // XEM_eeprom_2(IDX_hien_tai); //Xem tai dia chi vua luu
-                diachi_giaodich = dia_chi_IDX_hien_tai;
-                IDX_hien_tai ++;
-                if(dia_chi_IDX_hien_tai >= 63000) dia_chi_IDX_hien_tai = 0;
-                else dia_chi_IDX_hien_tai += sizeof(giao_dich);
-            }
-            else  //KHONG GHI vao EEPROM DUOC
-            {
-                // Serial.println("SAI........!");
-            }
-            // Serial.print("IDX hien tai: "); Serial.print(IDX_hien_tai);
-            // Serial.print(" - Dia chi hien tai: "); Serial.println(dia_chi_IDX_hien_tai);                    
-        }
+        //     if(VHITEK::EEPROM::write_eeprom_2(giao_dich)==true) //Neu ghi duoc vao EEPROM
+        //     {
+        //         // Serial.println("Dung");
+        //         // XEM_eeprom_2(IDX_hien_tai); //Xem tai dia chi vua luu
+        //         diachi_giaodich = dia_chi_IDX_hien_tai;
+        //         IDX_hien_tai ++;
+        //         if(dia_chi_IDX_hien_tai >= 63000) dia_chi_IDX_hien_tai = 0;
+        //         else dia_chi_IDX_hien_tai += sizeof(giao_dich);
+        //     }
+        //     else  //KHONG GHI vao EEPROM DUOC
+        //     {
+        //         // Serial.println("SAI........!");
+        //     }
+        //     // Serial.print("IDX hien tai: "); Serial.print(IDX_hien_tai);
+        //     // Serial.print(" - Dia chi hien tai: "); Serial.println(dia_chi_IDX_hien_tai);                    
+        // }
 
         //ham viet de load du lieu tu EEPROM moi khi khoi dong lai ESP32
         void load_du_lieu()
@@ -99,7 +99,14 @@ namespace VHITEK
             static float phantram;     
             uint32_t startTick = millis();   
 
-            VHITEK::Config::Read_ID_master();  
+            // VHITEK::Config::Read_ID_master();  
+
+            VHITEK::Config::get_setting_machine();
+            if(save_config_machine.tongtu>1000)
+            {
+                save_config_machine.tongtu = 24;
+                VHITEK::Config::Save_Set_Machine();
+            }
 
             /*dia_chi_IDX = dia_chi_IDX*sizeof(giao_dich);
 

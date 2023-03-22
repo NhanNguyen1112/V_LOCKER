@@ -18,7 +18,7 @@ namespace VHITEK
         // Hàm check thẻ đúng/sai
         //Đưa vào số tủ và user_check
         // Nếu đúng thì trả về TRUE, Sai thì trả về FALSE
-        bool kiem_tra_dung_tu(uint16_t so_tu, user_setting user_check)
+        /*bool kiem_tra_dung_tu(uint16_t so_tu, user_setting user_check)
         {
             user_setting doc_id;
 
@@ -86,11 +86,11 @@ namespace VHITEK
                 kt_ID = 0;
                 return false;
             }
-        }
+        }*/
 
 #ifdef mocua
         // Hàm viết cho việc kiểm tra và mở cửa cuốn của Công Ty
-        void mo_cua_cuon()
+        /*void mo_cua_cuon()
         {
             user_setting user_check;
             char ID_doc[13];
@@ -136,7 +136,7 @@ namespace VHITEK
                 VHITEK::Menu::end(); //reset lai password
                 VHITEK::Display::hien_ngay_gio();
             }
-        } 
+        } */
 #else 
         //Sử dụng Board Locker 24
         int read_locker_status(uint16_t locker_id)
