@@ -53,6 +53,16 @@ namespace VHITEK
             u8g2.setCursor(33,45);
             u8g2.printf("(1 -> 999)");                       
             u8g2.sendBuffer();
+        }
+        void TB_ADD_khac_0() //TB địa chỉ nhập vào phải lớn hơn 0
+        {
+            u8g2.clearBuffer();    
+            u8g2.setFont(u8g2_font_resoledbold_tr);
+            u8g2.setCursor(17,25);
+            u8g2.printf("DIA CHI NHAP VAO");  
+            u8g2.setCursor(23,35);
+            u8g2.printf("PHAI LON HON 0");                          
+            u8g2.sendBuffer();
         }  
         void TB_update_FOTA() //man hinh thong bao update Fimware
         {

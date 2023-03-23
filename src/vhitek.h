@@ -77,6 +77,32 @@ namespace VHITEK
 {
     typedef struct 
     {
+        uint16_t add;
+        String data;
+        uint16_t check_sum;
+    } QR;
+    extern QR QRread;
+
+    typedef struct
+    {
+        uint16_t add;
+        uint16_t ID;
+        String Barcode;
+        uint16_t checksum;
+    } MayIN;
+    extern MayIN Data_MayIN;
+
+    typedef struct
+    {
+        uint16_t add;
+        uint16_t id;
+        uint32_t timer;
+    } Music;
+    extern Music Data_Music;
+    ////////////////////////////////////////////////////////////
+
+    typedef struct 
+    {
         uint8_t ngay;
         uint8_t thang;
         uint16_t nam;
@@ -122,8 +148,8 @@ namespace VHITEK
 
     typedef struct //cài đặt các board phụ: board IO, QR, in nhiệt, music.
     {
-        uint16_t tongboard;
-        char Add_Board_IO[100];
+        uint16_t tongboard; //Chưa sử dụng
+        uint8_t Add_Board_IO[100];
         uint8_t Add_Module_QR;
         uint8_t Add_Module_Printer;
         uint8_t Add_Module_Music;
@@ -291,6 +317,9 @@ namespace VHITEK
         setting_machine get_setting_machine(); //đọc cài đặt máy
         bool Save_Set_Machine(); //Lưu setting máy, ô 1000
 
+        void Send_Printer(uint16_t add, uint16_t sotu, String data);
+        void Send_Music(uint16_t add, uint16_t sobaihat, uint16_t timeout);
+
         String toJson(hanh_dong data);
         String Json_tong_tu(); //Tao Json tong so tu
         String Json_thong_tin_tu(user_setting user); //Tao Json thong tin tu
@@ -339,7 +368,14 @@ namespace VHITEK
             fillrecycler,
             giathuetu,
             kt_rtc,
-            kt_bonho
+            kt_bonho,
+            add_BoardIO,
+            addQR,
+            addprint,
+            addmusic,
+            kt_QR,
+            kt_print,
+            kt_music,
         };
 
         void loop();
@@ -361,6 +397,7 @@ namespace VHITEK
         void TB_update_FOTA(); //man hinh thong bao update Fimware
         void hienthiLOGO(); //hiện logo TSE or VHITEK
         void TB_2_sotu_bangnhau();
+        void TB_ADD_khac_0(); //TB địa chỉ nhập vào phải lớn hơn 0
     }
 
     namespace Keypad

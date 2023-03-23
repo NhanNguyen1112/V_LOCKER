@@ -1,0 +1,26 @@
+
+
+
+
+1. Module QR:
+
+    - Master: {"add":"1","cmd":"qrread"}
+    - Slave: {"add":"1","data":"123456789","checksum":"65342"}
+
+
+2. Module máy in nhiệt:
+
+    - master: {"add":"1","cmd":"printer","id":"2","barcode":"1235456789"}
+    - Slave: {"add":"1","state":"ok"}
+            {"add":"1","state":"timeout"}
+
+3. Module Music:
+
+    - Master: {"add":"1","cmd":"music","id":"2","timeout":"2000"}
+                {"add":"1","cmd":"music","state":"stop"}
+
+    - Slave: {"add":"1","state":"ok"}
+
+
+
+

@@ -17,6 +17,9 @@ namespace VHITEK
 
   setting_machine save_config_machine;
   cabine_config save_cabine;
+  QR QRread;
+  MayIN Data_MayIN;
+  Music Data_Music;
 
   uint8_t lastMode = 1;
   uint8_t currentMode = 1; // 0 = menu, 1 = work
@@ -254,21 +257,75 @@ void setup()
 
 void loop()
 {
-  // delay(2000);
-  // String gatewayIP = WiFi.gatewayIP().toString();
+  DynamicJsonDocument doc(10000);
+  static char buffer[200];
+  static int ptr = 0;
 
-  // if(VHITEK::mo_tu_locker::read_locker_status(1)==1)
-    // Serial.println("mo tu");
-  
-  // Serial.println(VHITEK::mo_tu_locker::read_locker_status(8));
+  auto clear_buffer = [&](){
+    for (int i = 0; i < 200; i++)
+    {
+      buffer[i] = 0;
+    }
+    ptr = 0;
+  };
 
-  // VHITEK::Config::Test_led();
-  // for(int i=8; i<=VHITEK::Tong_so_tu; i++)
-  // {
-  //   // Serial.printf("Tu: %d, Status: %d\n", i, VHITEK::mo_tu_locker::locker_open(i));
-  //   Serial.printf("Tu: %d, Status: %d\n", i, VHITEK::mo_tu_locker::read_locker_status(i));
-  //   delay(1000);
-  // }
-  // delay(3000);
-  // Serial.println(VHITEK::ID);
+  while(Serial2.available()) //nhận từ RS485
+  {
+    int data = Serial2.read();
+    if (data == 0x7F) // 7F bắt đầu
+    {
+      clear_buffer();
+      return;
+    }
+    else if (data == 0x7E) // Kết thúc
+    {
+      doc.clear();
+      DeserializationError error = deserializeJson(doc, buffer);
+
+      if(error == error.Ok)
+      {
+        int addMas = doc["addMas"].as<int>();
+        int add = doc["add"].as<int>();
+
+        Serial.println("READ PORT: ");
+        serializeJson(doc, Serial);
+        Serial.println();
+
+        if(addMas == 1)
+        {
+          if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_QR) //Module QR
+          {
+            VHITEK::QRread.add = add;
+            VHITEK::QRread.data = doc["data"].as<String>();
+            VHITEK::QRread.check_sum = doc["crc"].as<uint16_t>();
+          }
+          else if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_Music) //Music
+          {
+
+          }
+          else if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_Printer) //printer
+          {
+
+          }
+          else
+          {
+            clear_buffer();
+            return;
+          }
+        }
+      }
+
+      clear_buffer();
+      return;
+    }
+    else 
+    {
+      if (ptr < 200)
+      {
+        buffer[ptr] = data;
+        ptr++;
+      }
+      else { clear_buffer(); }
+    }
+  }
 }

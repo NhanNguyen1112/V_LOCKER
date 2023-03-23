@@ -4,6 +4,36 @@ namespace VHITEK
 {
     namespace Config
     {
+        DynamicJsonDocument doc(10000);
+
+        void Send_Printer(uint16_t add, uint16_t sotu, String data)
+        {
+            doc.clear();
+            
+            doc["add"] = add;
+            doc["cmd"] = "printer";
+            doc["id"] = sotu;
+            doc["barcode"] = data;
+
+            Serial2.write(0x7F);
+            serializeJson(doc, Serial2);
+            Serial2.write(0x7E);
+        }
+
+        void Send_Music(uint16_t add, uint16_t sobaihat, uint16_t timeout)
+        {
+            doc.clear();
+            
+            doc["add"] = add;
+            doc["cmd"] = "music";
+            doc["id"] = sobaihat;
+            doc["timeout"] = timeout;
+
+            Serial2.write(0x7F);
+            serializeJson(doc, Serial2);
+            Serial2.write(0x7E);
+        }
+
         String toJson(hanh_dong data) //lich su giao dich
         {
             DynamicJsonDocument doc(10000);
@@ -103,7 +133,7 @@ namespace VHITEK
             for(int i=start; i<=sizeof(IDmay); i++) Socuoi += IDmay[i];
             VHITEK::socuoiID = Socuoi;
             // Serial.printf("\r\n\r\n %s\r\n\r\n", apSSID);
-            Serial.printf("\n%s\n",VHITEK::socuoiID);
+            // Serial.printf("\n%s\n",VHITEK::socuoiID);
             return String(apSSID);
         }    
 

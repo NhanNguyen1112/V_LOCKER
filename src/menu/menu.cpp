@@ -1958,7 +1958,7 @@ namespace VHITEK
             }
             else if(step == 1) //luu vao eeprom: 1000
             {
-                if(save_config_machine.tongtu == 0) //Neu tong so tu nhap vao = 0
+                if(tongsotu == 0) //Neu tong so tu nhap vao = 0
                 {
                     VHITEK::Display::TB_tu_lon_hon_0();
                     delay(2000);
@@ -1966,6 +1966,7 @@ namespace VHITEK
                 }
                 else 
                 {
+                    save_config_machine.Sub_boar.tongboard = tongsotu/24;
                     save_config_machine.tongtu = tongsotu;
                     VHITEK::Config::Save_Set_Machine();
                     step = 2;
@@ -2089,21 +2090,403 @@ namespace VHITEK
                 }
             }                 
         }
+        void ADD_QR() //cài địa chỉ module QR
+        {
+            char key = Keypad::getKey();
+            static char keydata[3];
+            static uint8_t keyCount = 0; 
+            static uint8_t step=0;   
+            static uint16_t add;    
+
+            if (reInit == true)
+            {
+                Keypad::clearKeypad(keydata, 3);
+                step = 0;
+                keyCount = 0;
+                reInit = false;
+            } 
+
+            if(step == 0)
+            {
+                u8g2.clearBuffer();
+                u8g2.setCursor(40,10);
+                u8g2.printf("CAI DAT");   
+                u8g2.setCursor(15,20);
+                u8g2.printf("DIA CHI QR MODULE");              
+
+                u8g2.setCursor(5,45);
+                u8g2.printf("Hien tai: %d", save_config_machine.Sub_boar.Add_Module_QR);        
+                u8g2.setCursor(5,55);
+                u8g2.printf("Moi: %c%c%c",  
+                            (keydata[0]) ? keydata[0] : '_',
+                            (keydata[1]) ? keydata[1] : '_',
+                            (keydata[2]) ? keydata[2] : '_');                                                    
+                u8g2.sendBuffer(); 
+
+                add = atoi(keydata);
+            }
+            else if(step == 1) //luu vao eeprom: 1000
+            {
+                if(add == 0) //Neu tong so tu nhap vao = 0
+                {
+                    VHITEK::Display::TB_ADD_khac_0();
+                    delay(2000);
+                    gotoMenu(menuMainId);                       
+                }
+                else 
+                {
+                    save_config_machine.Sub_boar.Add_Module_QR = add;
+                    VHITEK::Config::Save_Set_Machine();
+                    step = 2;
+                }              
+            }
+            else if(step == 2)
+            {
+                reInit = true;
+                u8g2.clearBuffer();
+                u8g2.setCursor(30,30);
+                u8g2.printf("DANG LUU..."); 
+                u8g2.setCursor(25,40);
+                u8g2.printf("DIA CHI MOI"); 
+                u8g2.sendBuffer();
+                delay(2000);
+                gotoMenu(menuMainId);
+            }
+
+            if(key)   
+            {
+                if(key == '#') //nhan cancel
+                {
+                    gotoMenu(menuMainId);
+                    return;
+                }
+                else if(key == '*') //nhan enter 
+                {
+                    step++;
+                }
+
+                if (keyCount < 3)
+                {
+                    keydata[keyCount] = key;
+                    keyCount++;
+                }
+                else {
+                    VHITEK::Keypad::clearKeypad(keydata, 3);
+                    keyCount = 0;
+                }                                 
+            }
+        }
+        void ADD_Music() //cài địa chỉ module MUSIC
+        {
+            char key = Keypad::getKey();
+            static char keydata[3];
+            static uint8_t keyCount = 0; 
+            static uint8_t step=0;   
+            static uint16_t add;    
+
+            if (reInit == true)
+            {
+                Keypad::clearKeypad(keydata, 3);
+                step = 0;
+                keyCount = 0;
+                reInit = false;
+            } 
+
+            if(step == 0)
+            {
+                u8g2.clearBuffer();
+                u8g2.setCursor(40,10);
+                u8g2.printf("CAI DAT");   
+                u8g2.setCursor(5,20);
+                u8g2.printf("DIA CHI MUSIC MODULE");              
+
+                u8g2.setCursor(5,45);
+                u8g2.printf("Hien tai: %d", save_config_machine.Sub_boar.Add_Module_Music);        
+                u8g2.setCursor(5,55);
+                u8g2.printf("Moi: %c%c%c",  
+                            (keydata[0]) ? keydata[0] : '_',
+                            (keydata[1]) ? keydata[1] : '_',
+                            (keydata[2]) ? keydata[2] : '_');                                                    
+                u8g2.sendBuffer(); 
+
+                add = atoi(keydata);
+            }
+            else if(step == 1) //luu vao eeprom: 1000
+            {
+                if(add == 0) //Neu tong so tu nhap vao = 0
+                {
+                    VHITEK::Display::TB_ADD_khac_0();
+                    delay(2000);
+                    gotoMenu(menuMainId);                       
+                }
+                else 
+                {
+                    save_config_machine.Sub_boar.Add_Module_Music = add;
+                    VHITEK::Config::Save_Set_Machine();
+                    step = 2;
+                }              
+            }
+            else if(step == 2)
+            {
+                reInit = true;
+                u8g2.clearBuffer();
+                u8g2.setCursor(30,30);
+                u8g2.printf("DANG LUU..."); 
+                u8g2.setCursor(25,40);
+                u8g2.printf("DIA CHI MOI"); 
+                u8g2.sendBuffer();
+                delay(2000);
+                gotoMenu(menuMainId);
+            }
+
+            if(key)   
+            {
+                if(key == '#') //nhan cancel
+                {
+                    gotoMenu(menuMainId);
+                    return;
+                }
+                else if(key == '*') //nhan enter 
+                {
+                    step++;
+                }
+
+                if (keyCount < 3)
+                {
+                    keydata[keyCount] = key;
+                    keyCount++;
+                }
+                else {
+                    VHITEK::Keypad::clearKeypad(keydata, 3);
+                    keyCount = 0;
+                }                                 
+            }
+        }
+        void ADD_Printer() //Cài địa chỉ Module máy in nhiệt
+        {
+            char key = Keypad::getKey();
+            static char keydata[3];
+            static uint8_t keyCount = 0; 
+            static uint8_t step=0;   
+            static uint16_t add;    
+
+            if (reInit == true)
+            {
+                Keypad::clearKeypad(keydata, 3);
+                step = 0;
+                keyCount = 0;
+                reInit = false;
+            } 
+
+            if(step == 0)
+            {
+                u8g2.clearBuffer();
+                u8g2.setCursor(40,10);
+                u8g2.printf("CAI DAT");   
+                u8g2.setCursor(5,20);
+                u8g2.printf("DIA CHI MAY IN NHIET");              
+
+                u8g2.setCursor(5,45);
+                u8g2.printf("Hien tai: %d", save_config_machine.Sub_boar.Add_Module_Printer);        
+                u8g2.setCursor(5,55);
+                u8g2.printf("Moi: %c%c%c",  
+                            (keydata[0]) ? keydata[0] : '_',
+                            (keydata[1]) ? keydata[1] : '_',
+                            (keydata[2]) ? keydata[2] : '_');                                                    
+                u8g2.sendBuffer(); 
+
+                add = atoi(keydata);
+            }
+            else if(step == 1) //luu vao eeprom: 1000
+            {
+                if(add == 0) //Neu tong so tu nhap vao = 0
+                {
+                    VHITEK::Display::TB_ADD_khac_0();
+                    delay(2000);
+                    gotoMenu(menuMainId);                       
+                }
+                else 
+                {
+                    save_config_machine.Sub_boar.Add_Module_Printer = add;
+                    VHITEK::Config::Save_Set_Machine();
+                    step = 2;
+                }              
+            }
+            else if(step == 2)
+            {
+                reInit = true;
+                u8g2.clearBuffer();
+                u8g2.setCursor(30,30);
+                u8g2.printf("DANG LUU..."); 
+                u8g2.setCursor(25,40);
+                u8g2.printf("DIA CHI MOI"); 
+                u8g2.sendBuffer();
+                delay(2000);
+                gotoMenu(menuMainId);
+            }
+
+            if(key)   
+            {
+                if(key == '#') //nhan cancel
+                {
+                    gotoMenu(menuMainId);
+                    return;
+                }
+                else if(key == '*') //nhan enter 
+                {
+                    step++;
+                }
+
+                if (keyCount < 3)
+                {
+                    keydata[keyCount] = key;
+                    keyCount++;
+                }
+                else {
+                    VHITEK::Keypad::clearKeypad(keydata, 3);
+                    keyCount = 0;
+                }                                 
+            }
+        }
+        void ADD_Board_IO() //cài địa chỉ Board IO
+        {
+
+        }
+        void Test_QR() //test đầu đọc QR
+        {
+            char key = Keypad::getKey();
+            static char keydata[3];
+            static uint8_t keyCount = 0; 
+            static uint8_t step=0;
+
+            if (reInit == true)
+            {
+                Keypad::clearKeypad(keydata, 3);
+                step = 0;
+                keyCount = 0;
+                reInit = false;
+            }
+
+            if(step == 0)
+            {
+                u8g2.clearBuffer(); 
+                u8g2.setCursor(25,25);
+                u8g2.printf("TEST MODULE QR");     
+                u8g2.setCursor(5,50);
+                u8g2.printf("Code: %s", QRread.data);                                                            
+                u8g2.sendBuffer(); 
+            }
+
+            if(key)   
+            {
+                if(key == '#') //nhan cancel
+                {
+                    gotoMenu(menuMainId);
+                    return;
+                }                                
+            }
+        }
+        void Test_Music() //Test Module Music
+        {
+            char key = Keypad::getKey();
+            static char keydata[3];
+            static uint8_t keyCount = 0; 
+            static uint8_t step=0;
+
+            if (reInit == true)
+            {
+                Keypad::clearKeypad(keydata, 3);
+                step = 0;
+                keyCount = 0;
+                reInit = false;
+            }
+
+            if(step == 0)
+            {
+                u8g2.clearBuffer(); 
+                u8g2.setCursor(35,25);
+                u8g2.printf("DANG TEST");
+                u8g2.setCursor(20,35);
+                u8g2.printf("MODULE AM THANH");                                                                
+                u8g2.sendBuffer(); 
+                step=1;
+            }
+            else if(step==1)
+            {
+                VHITEK::Config::Send_Music(save_config_machine.Sub_boar.Add_Module_Music, 1, 3000);
+                delay(3000);
+                gotoMenu(menuMainId);
+            }
+
+            if(key)   
+            {
+                if(key == '#') //nhan cancel
+                {
+                    gotoMenu(menuMainId);
+                    return;
+                }                                
+            }
+        }
+        void Test_Print() //Test máy in nhiệt
+        {
+            char key = Keypad::getKey();
+            static char keydata[3];
+            static uint8_t keyCount = 0; 
+            static uint8_t step=0;
+
+            if (reInit == true)
+            {
+                Keypad::clearKeypad(keydata, 3);
+                step = 0;
+                keyCount = 0;
+                reInit = false;
+            }
+
+            if(step == 0)
+            {
+                u8g2.clearBuffer(); 
+                u8g2.setCursor(35,25);
+                u8g2.printf("DANG TEST");
+                u8g2.setCursor(25,35);
+                u8g2.printf("MAY IN NHIET");                                                                
+                u8g2.sendBuffer(); 
+                step=1;
+            }
+            else if(step==1)
+            {
+                for(int i=0; i<=2; i++)
+                {
+                    VHITEK::Config::Send_Printer(save_config_machine.Sub_boar.Add_Module_Printer, 999, "1234567890");
+                    delay(1000);
+                }
+                delay(1000);
+                gotoMenu(menuMainId);
+            }
+
+            if(key)   
+            {
+                if(key == '#') //nhan cancel
+                {
+                    gotoMenu(menuMainId);
+                    return;
+                }                                
+            }
+        }
 
         void begin()
         {
             //Menu cua khach hang
             add_menu("Them tu moi", menuThemtu, 1, menu_them_tu);
-            add_menu("Cai dat size tu", caisizetu, 1, cai_dat_size_tu);
+            add_menu("Set size tu", caisizetu, 1, cai_dat_size_tu);
 
             add_menu("Xoa tu bat ky", menuXoatubatky, 1, menu_xoa_tu_bat_ky);
             add_menu("Xoa tat ca cac tu", menuXoatatca, 1, menu_xoa_tat_ca_tu);
             add_menu("Xem thong tin may", xemthongtinmay, 1, xem_thong_tin_may);
-            add_menu("Cai dat ngay gio", menucaidatngay, 1, menu_cai_dat_ngay_gio);
-            add_menu("Xem tu chua su dung", tuchuasudung, 1, menu_xem_tu_chua_su_dung);
+            add_menu("Set ngay gio", menucaidatngay, 1, menu_cai_dat_ngay_gio);
+            add_menu("Tu chua su dung", tuchuasudung, 1, menu_xem_tu_chua_su_dung);
 
             add_menu("Set tien min max", setbillminmax, 1, set_bill_minmax);
-            add_menu("Cai tien thoi", setpayout, 1, set_payout);
+            add_menu("Set tien thoi", setpayout, 1, set_payout);
             add_menu("Nap/xa tien thoi", fillrecycler, 1, nap_tien_thoi);
             add_menu("Xem gia thue tu", giathuetu, 1, gia_thue_tu);
 
@@ -2112,13 +2495,18 @@ namespace VHITEK
 
             //Menu cua ky thuat
             add_menu("Mo tu bat ky", kiemtratu, 2, mo_tu_bat_ky);
-            add_menu("Cai dat tong so tu", caidattongsotu, 2, cai_dat_tong_so_tu);
-            add_menu("KT mach thoi gian", kt_rtc, 2, KT_RTC);
-            add_menu("KT bo nho cua mach", kt_bonho, 2, KT_bo_nho);
+            add_menu("Set tong so tu", caidattongsotu, 2, cai_dat_tong_so_tu);
+            add_menu("KT IC thoi gian", kt_rtc, 2, KT_RTC);
+            add_menu("KT IC nho", kt_bonho, 2, KT_bo_nho);
 
-            // add_menu("Test QR module", kt_bonho, 2, KT_bo_nho);
-            // add_menu("Test may in", kt_bonho, 2, KT_bo_nho);
-            // add_menu("Test music", kt_bonho, 2, KT_bo_nho);
+            add_menu("D/C Board IO", add_BoardIO, 2, ADD_Board_IO);
+            add_menu("D/C mach QR", addQR, 2, ADD_QR);
+            add_menu("D/C may in", addprint, 2, ADD_Printer);
+            add_menu("D/C mach MUSIC", addmusic, 2, ADD_Music);
+
+            add_menu("Test QR", kt_QR, 2, Test_QR);
+            add_menu("Test may in", kt_print, 2, Test_Print);
+            add_menu("Test music", kt_music, 2, Test_Music);
 
             userLevel = 0;
             MenuID = 0;
