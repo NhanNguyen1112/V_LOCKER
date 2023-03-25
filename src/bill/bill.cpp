@@ -3,7 +3,7 @@
 namespace VHITEK
 {
     BillValidator Validator;
-    namespace bill
+    namespace BILL
     {
         ICTBC_BUS dataICTBus(&Serial1, 1);
         essp dataESSPBus(&Serial1, Master);
@@ -39,6 +39,7 @@ namespace VHITEK
 
         void begin()
         {
+            VHITEK::Display::TB_dang_KT_cai_dat();
             Validator.ICTDataBus = &dataICTBus;
             Validator.ESSPDataBus = &dataESSPBus;
             // Serial.println("Bill begin");

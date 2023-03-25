@@ -4,7 +4,11 @@ namespace VHITEK
 {
     namespace Config
     {
+        uint16_t addIO, sotuIO;
+
         DynamicJsonDocument doc(10000);
+
+        void decodeID(uint16_t sotu_INPUT, uint16_t &id, uint16_t &add);
 
         void Send_Printer(uint16_t add, uint16_t sotu, String data)
         {
@@ -34,27 +38,104 @@ namespace VHITEK
             Serial2.write(0x7E);
         }
 
-        String toJson(hanh_dong data) //lich su giao dich
+        void Json_Open_Locker(uint16_t add, uint16_t sotu)
+        {
+            doc.clear();
+            
+            doc["add"] = add;
+            doc["cmd"] = "open";
+            doc["id"] = sotu;
+
+            Serial2.write(0x7F);
+            serializeJson(doc, Serial2);
+            Serial2.write(0x7E);
+        }
+        void Json_Read_Locker(uint16_t add, uint16_t sotu)
+        {
+            doc.clear();
+            
+            doc["add"] = add;
+            doc["cmd"] = "read";
+            doc["id"] = sotu;
+
+            Serial2.write(0x7F);
+            serializeJson(doc, Serial2);
+            Serial2.write(0x7E);
+        }
+
+        bool read_locker(uint16_t sotu) //Đọc trạng thái tủ
+        {
+            decodeID(sotu, addIO, sotuIO);
+            Json_Read_Locker(addIO, sotuIO);
+            flag_status = 1;
+            if(flag_status == 2)
+            {
+                flag_status=0;
+                return ReadIO.status;
+            }
+        }
+        bool openlocker(uint16_t sotu) //Mở tủ
+        {
+            decodeID(sotu, addIO, sotuIO);
+            Json_Open_Locker(addIO, sotuIO);
+            return read_locker(sotu);
+        }
+
+        // Hàm viết cho hành động mở tủ
+        // Đưa vào số tủ: 0->Mở tất cả các tủ; các số khác mở theo số tủ
+        bool Open_IO(uint16_t so_tu)
+        {
+            if (so_tu == 0) // Mo tat ca cac tu
+            {
+                u8g2.clearBuffer();
+                u8g2.drawFrame(0, 0, 128, 64);
+                u8g2.setCursor(15, 35);
+                u8g2.printf("MO TAT CA CAC TU");
+                u8g2.sendBuffer();
+
+                for (int i = 1; i <= save_config_machine.tongtu; i++)
+                {
+                    VHITEK::Config::openlocker(i);
+                    delay(10);
+                }
+                return 1;
+            }
+            else // Mo tu theo so tu
+            {
+                u8g2.clearBuffer();
+
+                if (VHITEK::Config::openlocker(so_tu) == 1) // MỞ được
+                {
+                    u8g2.drawXBM(0, 0, 128, 64, tudamo_bits);
+                    u8g2.sendBuffer();
+                    return 1;
+                }
+                else // KHÔNG mở được -> LỖI
+                {
+                    u8g2.drawXBM(0, 0, 128, 64, khongmoduoccua_bits);
+                    u8g2.sendBuffer();
+                    return 0;
+                }
+            }
+        }
+
+        String Json_his(cabine_transac data) //lich su giao dich
         {
             DynamicJsonDocument doc(10000);
             thoigian time;
             char rData[2048];
             char dateBuf[25];
 
-            time.ngay=data.ngay;
-            time.thang=data.thang;
-            time.nam=data.nam;
-            time.gio=data.gio;
-            time.phut=data.phut;
+            time = thoi_gian;
 
             sprintf(dateBuf, "%04d-%02d-%02dT%02d:%02d:00.546715",
                     time.nam+2000, time.thang, time.ngay, time.gio, time.phut);
 
             doc["IDX"] = data.IDX;
-            doc["Status"] = data.trang_thai;
+            doc["Status"] = data.status_cabine;
             doc["lockerid"] = data.so_tu;
-            doc["DataCheck"] = data.send_data_check;
-            doc["IdCard"] = data.ID;
+            doc["DataCheck"] = data.send_data;
+            doc["IdCard"] = data.RFID;
             doc["Time"] = dateBuf;
             doc["MID"] = apSSID;
             serializeJson(doc, rData);
@@ -73,7 +154,7 @@ namespace VHITEK
             return String(rData);            
         }
 
-        String Json_thong_tin_tu(user_setting user) //Tao Json thong tin tu
+        /*String Json_thong_tin_tu(user_setting user) //Tao Json thong tin tu
         {
             DynamicJsonDocument doc(10000);
             char rData[2048];
@@ -85,7 +166,7 @@ namespace VHITEK
 
             serializeJson(doc, rData);
             return String(rData);             
-        }
+        }*/
 
         String Json_machine_status() //Tao Json tinh trang may
         {
@@ -106,9 +187,9 @@ namespace VHITEK
             doc["version"] = FW;
 
             int total_elm=0;
-            // for (int i=1;i<=Tong_so_tu;i++)
+            // for (int i=1;i<=save_config_machine.tongtu;i++)
             // {
-            //     if(VHITEK::mo_tu_locker::read_locker_status(i))
+            //     if(VHITEK::Config::read_locker(i)==1) //đang mở
             //     {
             //         doc["statuscabined"][total_elm++]=i;
             //     }
@@ -137,14 +218,14 @@ namespace VHITEK
             return String(apSSID);
         }    
 
-        void xem_tung_o()
+        int get_temp() //đọc nhiệt độ ESP32
         {
-            for(int i=1000; i<=1120; i++)
-            {
-                Serial.printf("%d: %d, ", i, myMem.read(i)-'0');
-                // Serial.print(i); Serial.print(": "); Serial.print(myMem.read(i)-'0'); Serial.print(", ");
-            }
-            Serial.println();
+            return ((temprature_sens_read() - 32) / 1.8);
+            // Serial.print("Temperature: ");
+            // // Convert raw temperature in F to Celsius degrees
+            // Serial.print((temprature_sens_read() - 32) / 1.8);
+            // Serial.println(" C");
+            // delay(1000);
         }
 
         /*void xem_eeprom_tu_bat_ky(int so_tu){ //XEM EEPROM 1 tu bat ky
@@ -189,22 +270,22 @@ namespace VHITEK
             {
                 for (uint16_t i = 0; i <= Max_diachi; i++)
                 {
-                    myMem.write(i, 0);
-                    myMem2.write(i, 0);
+                    EEPROM::myMem.write(i, 0);
+                    EEPROM::myMem2.write(i, 0);
                 }
             }
             else if (eep == 1) // xoa eeprom 1
             {
                 for (uint16_t i = 0; i <= Max_diachi; i++)
                 {
-                    myMem.write(i, 0);
+                    EEPROM::myMem.write(i, 0);
                 }
             }
             else if (eep == 2) // xoa eeprom 2
             {
                 for (uint16_t i = 0; i <= Max_diachi; i++)
                 {
-                    myMem2.write(i, 0);
+                    EEPROM::myMem2.write(i, 0);
                 }
             }
             // Serial.println("Đã xóa EEPROM xong");
@@ -217,12 +298,10 @@ namespace VHITEK
 
         bool kiem_tra_tu_da_co(uint16_t so_tu) //Kiem tra xem so tu nay da luu chua
         {
-            static uint16_t doc_so_tu;
-            accessI2C1Bus([&]{
-                    myMem.get(tinh_o_luu_the(so_tu), doc_so_tu);              
-            }, 100);                  
+            cabine_config readcabine;
+            readcabine = EEPROM::read_EEP_1_Cabine(so_tu);
             
-            if(doc_so_tu == so_tu) return true; //Neu the da duoc luu
+            if(readcabine.sotu == so_tu) return true; //Neu the da duoc luu
             else return false; //neu the chua duoc luu
         } 
 
@@ -236,29 +315,24 @@ namespace VHITEK
             }
         }
 
-        /*uint16_t KT_tong_tu_chua_SD() //Tinh tong so tu chua su dung
+        void KT_tong_tu_chua_SD() //Tinh tong so tu chua su dung
         {
-            uint16_t kiem_tra_co=0;
             Tong_tu_chua_SD = 0;
             int vitri=0;
 
             // Serial.printf("Tu SD: ");
-            for(int sotu=1; sotu<=Tong_so_tu; sotu++) //dò từ 1 đến tổng số tủ
+            for(int sotu=1; sotu<=save_config_machine.tongtu; sotu++) //dò từ 1 đến tổng số tủ
             {
-                accessI2C1Bus([&]{
-                        myMem.get(VHITEK::Menu::tinh_o_luu_the(sotu), kiem_tra_co);       
-                }, 100);          
-
-                if(kiem_tra_co == 0)
+                if(kiem_tra_tu_da_co(sotu) == 0)
                 {
                     tuchuasd[vitri] = sotu;
-                    // Serial.printf("%d ", tuchuasd[vitri]);
+                    Serial.printf("%d ", tuchuasd[vitri]);
                     Tong_tu_chua_SD++;
                     vitri++;
                 }
             }
             // Serial.printf("Tong tu chua sd: %d \n", Tong_tu_chua_SD);
-        } */
+        }
 
         setting_machine get_setting_machine() //đọc cài đặt máy
         {
@@ -267,27 +341,57 @@ namespace VHITEK
 
         bool Save_Set_Machine() //Lưu setting máy, ô 1000
         {
-            if(VHITEK::EEPROM::write_EEP_1_Machine(save_config_machine)==true)
+            if(VHITEK::EEPROM::write_EEP_1_Machine()==true)
                 return true; 
             else return false;
         }
 
-        void begin()
+        void decodeID(uint16_t sotu_INPUT, uint16_t &id, uint16_t &add)
         {
-
+            id = (sotu_INPUT / 24)+1;
+            add = sotu_INPUT % 24;
+        }
+    
+        int xuat_sotu(String data)
+        {
+            char buf[5];
+            int sotu;
+            for(int i=0; i<=2; i++)
+            {
+                buf[i] = data[i];
+                // Serial.println(buf[i]);
+            }
+            sotu = atoi(buf);
+            return sotu;
+            // Serial.printf("So tu: %d\n", sotu);/
         }
 
-        void Test_led()
+        String xuatbarcode(uint16_t sotu)
         {
-            // static uint64_t last_time=0;
-            // if(millis() - last_time > 500)
-            // {
-            //     digitalWrite(PIN_PUMP, HIGH);
-            //     digitalWrite(PIN_VAL1, !digitalRead(PIN_VAL1));
-            //     digitalWrite(PIN_VAL2, !digitalRead(PIN_VAL2));
-            //     digitalWrite(PIN_TOTAL, !digitalRead(PIN_TOTAL));
-            //     last_time = millis();
-            // }            
+            char buffer[50];
+            sprintf(buffer,"%03d%s%02d%02d%02d%02d",sotu,VHITEK::socuoiID.c_str(),thoi_gian.gio ,thoi_gian.phut ,thoi_gian.ngay ,thoi_gian.thang);
+            // Serial.println("bufer :");
+            // Serial.println(buffer);
+            return String(buffer);
+        }
+
+        // void 
+
+        void begin()
+        {
+            get_setting_machine();
+            if(save_config_machine.tongtu>1000)
+            {
+                save_config_machine.tongtu = 24;
+                Save_Set_Machine();
+            } 
+            else
+            {
+                save_config_machine.Sub_boar.tongboard = save_config_machine.tongtu/24;
+                Save_Set_Machine();
+            }
+
+            KT_tong_tu_chua_SD();
         }
     }
 }

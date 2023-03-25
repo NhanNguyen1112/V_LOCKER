@@ -10,6 +10,17 @@ namespace VHITEK
 
     namespace Display
     {
+        void TB_dang_KT_cai_dat()
+        {
+            u8g2.clearBuffer();    
+            u8g2.drawFrame(0, 0, 128, 64);
+            u8g2.setFont(u8g2_font_resoledbold_tr);
+            u8g2.setCursor(25,30);
+            u8g2.printf("DANG KIEM TRA");  
+            u8g2.setCursor(30,45);
+            u8g2.printf("CAI DAT MAY");    
+            u8g2.sendBuffer();
+        }
         void thong_bao_tu_da_co() //thong bao TU NAY DA CO
         {
             u8g2.clearBuffer();    
@@ -78,20 +89,14 @@ namespace VHITEK
             u8g2.setCursor(30, 40);
             u8g2.printf("Cho 3-5 phut");                              
             u8g2.setFont(u8g2_font_ncenB10_tr);
-            u8g2.setCursor(10, 60);
-            u8g2.printf(logoTSE);                 
+            #ifdef logoVHITEK
+            u8g2.setCursor(20, 60);
+            u8g2.printf(logoVHITEK);  
+            #else
+            u8g2.setCursor(10, 60);    
+            u8g2.printf(logoTSE); 
+            #endif                 
             u8g2.sendBuffer();
-        }
-        void hienthiLOGO() //hiện logo TSE or VHITEK
-        {
-            u8g2.setFont(u8g2_font_resoledbold_tr);
-            #ifdef logoTSE
-            u8g2.setCursor(10,60);
-            u8g2.printf(logoTSE);
-            #else 
-            u8g2.setCursor(35,60);
-            u8g2.printf(logoVHITEK);
-            #endif
         }
         void TB_2_sotu_bangnhau()
         {
@@ -104,6 +109,17 @@ namespace VHITEK
             u8g2.setCursor(18,45);
             u8g2.printf("XIN MOI NHAP LAI");                       
             u8g2.sendBuffer();            
+        }
+        void TB_Server_Disconnect() //TB mất kết nối Server
+        {
+            u8g2.clearBuffer();
+            u8g2.setFont(u8g2_font_resoledbold_tr);
+            u8g2.drawFrame(0, 0, 128, 64);
+            u8g2.setCursor(35, 25);
+            u8g2.printf("THONG BAO");
+            u8g2.setCursor(10, 45);
+            u8g2.printf("MAT KET NOI SERVER");
+            u8g2.sendBuffer();
         }
 
 #ifdef mocua
@@ -118,7 +134,6 @@ namespace VHITEK
                 lastTick = millis();
             }         
 
-            VHITEK::WSSID = WiFi.SSID();
             u8g2.clearBuffer();
             u8g2.drawFrame(0, 0, 128, 64);
             u8g2.enableUTF8Print();
@@ -145,10 +160,14 @@ namespace VHITEK
             u8g2.setFont(u8g2_font_timB24_tf);   
             u8g2.setCursor(27, 41);
             u8g2.printf("%02d:%02d", thoi_gian.gio, thoi_gian.phut); 
-
             u8g2.setFont(u8g2_font_ncenB10_tr);
+            #ifdef logoVHITEK
             u8g2.setCursor(20, 60);
-            u8g2.printf(logoVHITEK);                                    
+            u8g2.printf(logoVHITEK);  
+            #else
+            u8g2.setCursor(10, 60);    
+            u8g2.printf(logoTSE); 
+            #endif                                    
             u8g2.sendBuffer();                
         }
 #else 
@@ -172,7 +191,6 @@ namespace VHITEK
 
             if(check_page == 0) //Man hinh thoi gian
             {
-                VHITEK::WSSID = WiFi.SSID();
                 u8g2.clearBuffer();
                 u8g2.drawFrame(0, 0, 128, 64);
                 u8g2.enableUTF8Print();
@@ -199,10 +217,14 @@ namespace VHITEK
                 u8g2.setFont(u8g2_font_timB24_tf);   
                 u8g2.setCursor(27, 41);
                 u8g2.printf("%02d:%02d", thoi_gian.gio, thoi_gian.phut); 
-
                 u8g2.setFont(u8g2_font_ncenB10_tr);
-                u8g2.setCursor(10, 60);
-                u8g2.printf(logoVHITEK);                                    
+                #ifdef logoVHITEK
+                u8g2.setCursor(20, 60);
+                u8g2.printf(logoVHITEK);  
+                #else
+                u8g2.setCursor(10, 60);    
+                u8g2.printf(logoTSE); 
+                #endif                                                           
                 u8g2.sendBuffer();                
             }  
             else  //Man hinh moi chon so tu

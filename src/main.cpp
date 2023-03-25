@@ -15,21 +15,23 @@ namespace VHITEK
   SemaphoreHandle_t MDBSemaphoreHandle;
   uint32_t MDBSemaphoreHandleTakenTick;
 
+  char apSSID[30]; //mã máy
+
   setting_machine save_config_machine;
   cabine_config save_cabine;
+  cabine_transac last_trans;
   QR QRread;
   MayIN Data_MayIN;
   Music Data_Music;
+  statusIO ReadIO;
+  uint8_t flag_status; //cờ kiểm tra status
 
   uint8_t lastMode = 1;
   uint8_t currentMode = 1; // 0 = menu, 1 = work
 
   volatile uint64_t ID;
-  char ID_Master[13];
-  uint8_t tuchuasd[24];
-
-  ExternalEEPROM myMem;
-  ExternalEEPROM myMem2;
+  uint8_t tuchuasd[200];
+  uint16_t Tong_tu_chua_SD;
 
   thoigian thoi_gian;
   RTC_DS1307 rtc;
@@ -37,21 +39,13 @@ namespace VHITEK
   uint32_t IDX_hien_tai;
   uint32_t dia_chi_IDX_hien_tai;
 
-  char apSSID[30];
   String socuoiID;
 
-  String WSSID;
-  String bufferGM65;
-
-  boolean check_read_eeprom_1;
-  boolean check_read_eeprom_2;
   bool check_send_tong_so_tu;
   bool check_send_card_info;
-  bool check_update_FOTA;
   bool check_update_machine;
-  bool check_his_send;
-
-  uint16_t Tong_tu_chua_SD;
+  // bool check_his_send;
+  int server_check_connect;
   uint16_t diachi_giaodich;
 
   unsigned short cal_crc_loop_CCITT_A(short l, unsigned char *p)
@@ -150,13 +144,13 @@ namespace VHITEK
     Menu::loop();
   }
 
-  void workMode()
+  void working()
   {
-    // VHITEK::mo_tu_locker::mo_tu_locker();
-    // VHITEK::mo_tu_locker::locker_button();
-    // VHITEK::mo_tu_locker::locker_Barcode();
-    // VHITEK::mo_tu_locker::mo_cua_cuon();
-    VHITEK::Display::hien_ngay_gio();
+    if(VHITEK::server_check_connect>=5) VHITEK::Display::TB_Server_Disconnect();
+    else
+    {
+      VHITEK::ACTION::Locker_NB_RFID();
+    } 
   }
 
   void mainTask(void *parameter)
@@ -186,9 +180,127 @@ namespace VHITEK
         menuMode();
       }
       else
-      { // 1 work
-        workMode();
+      { 
+        working();
       }
+      delay(10);
+    }
+  }
+
+  void _Synch_Task(void *parameter)
+  {
+    DynamicJsonDocument doc(10000);
+    cabine_transac trans_read;
+    uint32_t lastTick_FOTA=0;
+    uint32_t lastTick_wifi=0;
+    uint32_t lastTick_status_machine=0;
+
+    while(1)
+    {
+      if (!WiFi.isConnected()) //Kiem  tra ket noi Wifi
+      {
+        if ((uint32_t)(millis() - lastTick_wifi) > 5000)
+        {
+          if (WiFi.reconnect())
+          {
+            esp_wifi_set_ps(WIFI_PS_NONE);
+          }
+          lastTick_wifi = millis();
+        }
+      }
+
+      if((WiFi.status() == WL_CONNECTED))  //Kiem tra update FOTA
+      {
+        if((uint32_t)(millis() - lastTick_FOTA) > 60000) //60s kiem tra update 1 lan
+        {
+          // Serial.println("Kiem tra FOTA");
+          VHITEK::FOTA::Star_update();
+          lastTick_FOTA = millis();
+        }  
+      }
+      
+      if((WiFi.status() == WL_CONNECTED)) //Gui trang thai may
+      {
+        if ( ((uint32_t)(millis() - lastTick_status_machine) > 30000) or check_update_machine == true ) //1s update 1 lan
+        {
+          char url[1024];
+          HTTPClient http;
+          sprintf(url, "http://%s:8000/locker/updatestatuslocker", API);
+          http.begin(url); //API
+          http.addHeader("Content-Type", "application/json");              
+          String json_data=VHITEK::Config::Json_machine_status();
+          // Serial.println(VHITEK::Config::Json_machine_status().c_str());
+
+          int post = http.POST(json_data.c_str());
+          String payload = http.getString();
+          // Serial.println(payload);          
+
+          if (post == 200)  //Check for the returning code
+          { 
+            server_check_connect=0;
+            DeserializationError error = deserializeJson(doc, payload);
+            if (error == 0)
+            {
+              // Serial.println(doc["status"].as<String>());
+              if(doc["status"].as<boolean>() == true) //NEU da gui duoc
+              {
+                check_update_machine = false;
+                // Serial.println("Đã gửi được trạng thái máy");             
+              }
+            }
+          }
+          else 
+          {
+            server_check_connect++;
+            // Serial.printf("Server check: %d\n", server_check_connect);
+          }
+          http.end();  
+
+          lastTick_status_machine = millis();
+        }
+      }
+
+      if ((WiFi.status() == WL_CONNECTED))  //GUI lich su hanh dong mo cua len Server
+      {
+        if(check_update_machine == true)
+        {
+          trans_read = VHITEK::EEPROM::read_eeprom_2(diachi_giaodich); //doc lich su giao dich da luu trong EEPROM 2
+          if(VHITEK::EEPROM::check_read_eeprom_2 == true) //Neu doc trong EEPROM ra OK
+          {
+            if(trans_read.send_data == 1) //CHUA gui
+            {
+              HTTPClient http;
+              http.begin("http://%s:8000/locker/sethistorytransactionlocker",API); //Specify the URL
+              http.addHeader("Content-Type", "application/json");              
+              String json_data=VHITEK::Config::Json_his(trans_read);
+              // Serial.println(VHITEK::Config::toJson(data).c_str());
+
+              int post = http.POST(json_data.c_str());
+              String payload = http.getString();
+              // Serial.println(payload);          
+              if (post == 200)  //Check for the returning code
+              { 
+                DeserializationError error = deserializeJson(doc, payload);
+                if (error == 0)
+                {
+                  // Serial.println(doc["status"].as<String>());
+                  if(doc["status"].as<boolean>() == true) //NEU da gui duoc
+                  {
+                    // Serial.println("Da gui duoc transaction");
+                    // trans_read.send_data = 0;
+                    // accessI2C1Bus([&]{
+                    //     myMem2.put(diachi+7, data.send_data_check); //cap nhat lai Data send check
+                    // }, 100);    
+                    // check_his_send = false;                
+                  }
+                }
+              }
+              http.end();     
+            }
+          }
+        }
+      }
+
       delay(10);
     }
   }
@@ -232,21 +344,20 @@ namespace VHITEK
     Ds1307::begin();
     VHITEK::FOTA::FOTAbegin();
     VHITEK::OTA::WifiBegin();
+    VHITEK::Config::begin();
+    // VHITEK::BILL::begin();
 
-    // VHITEK::Config::All_Clear_eeprom(1, 64000);
+    // VHITEK::Config::All_Clear_eeprom(2, 1000);
     VHITEK::transaction::load_du_lieu();
-    // VHITEK::Config::KT_tong_tu_chua_SD();
 
     // Start Keypad Task
     xTaskCreateUniversal(taskKeypad, "taskKeypad", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
     xTaskCreateUniversal(mainTask, "mainTask", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
-    // xTaskCreateUniversal(dong_bo_task, "Task_dong_bo", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
-
-    // Serial.print("IDX: "); Serial.print(IDX_hien_tai);
-    // Serial.print(" - Dia chi: "); Serial.println(dia_chi_IDX_hien_tai);
+    xTaskCreateUniversal(_Synch_Task, "Task_synch", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
 
     // Serial.println(sizeof(save_config_machine));
     // Serial.println(sizeof(save_cabine));
+    
   }
 }
 
@@ -269,7 +380,7 @@ void loop()
     ptr = 0;
   };
 
-  while(Serial2.available()) //nhận từ RS485
+  if(Serial2.available()) //nhận từ RS485
   {
     int data = Serial2.read();
     if (data == 0x7F) // 7F bắt đầu
@@ -307,10 +418,15 @@ void loop()
           {
 
           }
-          else
+          else //Các board IO
           {
-            clear_buffer();
-            return;
+            if(VHITEK::flag_status == 1)
+            {
+              VHITEK::ReadIO.add = add;
+              VHITEK::ReadIO.id = doc["id"].as<uint16_t>();
+              VHITEK::ReadIO.status = doc["status"].as<uint8_t>();
+              VHITEK::flag_status = 2;
+            }
           }
         }
       }

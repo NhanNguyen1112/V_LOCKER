@@ -34,15 +34,40 @@
 #include <BillValidator.h>
 #include "Adafruit_Thermal.h"
 
-//////////////CHỌN CHỨC NĂNG//////////////////
-#define mocua
-#define Locker_NoiBo
-#define Locker_Shipping
+#ifdef __cplusplus
+  extern "C" {
+#endif
+  uint8_t temprature_sens_read();
+#ifdef __cplusplus
+}
+#endif
 
+uint8_t temprature_sens_read();
+
+//////////////CHỌN CHỨC NĂNG//////////////////
+
+// #define serverchinh
+#ifdef serverchinh
+#define API ".............."
+#else 
+#define API "159.223.48.4"
+#endif
+
+// #define mocua
+#ifdef mocua
 #define Use_RFID
+#endif
+
+#define Locker_NoiBo
+#ifdef Locker_NoiBo
+#define Use_RFID
+#endif
+
+#define Locker_Shipping
 #define Use_QR
 #define Use_Printer
 #define Use_Music
+#define bill
 /////////////////////////////////////////////
 
 #define MK_khach 123456 //Setup MK cho khach
@@ -51,6 +76,7 @@
 
 #define PIN_MENU 15 //Nut MENU
 #define PIN_LEVEL_SHIFTER_ENABLE 13 //Luon de muc HIGH de ENABLE ESP32
+#define so_luong_menu 30 //tong so menu
 
 #ifdef mocua
 #define PIN_PUMP 12
@@ -64,10 +90,10 @@
 #define PIN_ENC1 34
 #endif
 
-#define logoTSE "TSEVENDING" //10,60
-#define logoVHITEK "VHITEK.VN" //35,60
-
-#define so_luong_menu 30 //tong so menu
+#define logoTSE "TSEVENDING"
+#ifndef logoTSE
+#define logoVHITEK "VHITEK.VN"
+#endif
 
 #define FW_TYPE  "VLOCKER-V1"
 #define FW  "LK0.0.1"
@@ -99,6 +125,17 @@ namespace VHITEK
         uint32_t timer;
     } Music;
     extern Music Data_Music;
+
+    typedef struct //đọc trạng thái IO
+    {
+        uint16_t add;
+        uint16_t id;
+        uint8_t status;
+    }statusIO;
+    extern statusIO ReadIO;
+
+    extern uint8_t flag_status; //cờ kiểm tra status
+    
     ////////////////////////////////////////////////////////////
 
     typedef struct 
@@ -181,8 +218,8 @@ namespace VHITEK
     typedef struct //cài đặt tủ: kích thước 120 byte; ô bắt đầu lưu 2000
     {
         uint16_t sotu;
-        char ID_user[13];
-        uint8_t mat_khau[10];
+        char ID_user[15];
+        char mat_khau[10];
         uint8_t size;
         uint8_t send_data;
         uint8_t OTP[8];
@@ -197,62 +234,51 @@ namespace VHITEK
         uint16_t check_sum;
     } cabine_config;
 
+    typedef struct //IC2: Transaction
+    {
+        uint32_t IDX;
+        uint32_t money; 
+        char RFID[15];
+        char mat_khau[10];
+        uint16_t so_tu; 
+        uint8_t size_tu;
+        uint8_t status_cabine;
+        uint8_t send_data;
+        uint8_t typepayment; //1 byte: 0-tienmat; 1:VNPAY
+        uint8_t sdt_gui[12]; 
+        uint8_t sdt_nhan[12]; 
+        thoigian time_sender; 
+        thoigian time_receive;
+
+        uint8_t chua_SD[50];
+
+        uint16_t check_sum; 
+    } cabine_transac;
+
     extern setting_machine save_config_machine;
     extern cabine_config save_cabine;
+
+    extern cabine_transac last_trans;
     
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-    typedef struct //
-    {
-        uint16_t so_tu; //2 byte
-        char ID_user[13]; //13 byte: 1 byte 0 o cuoi
-        uint8_t mat_khau[10]; //10 byte: 1 byte 0 o cuoi
-        uint8_t send_data_check; // 1: chua gui; 0: da gui
-        uint16_t check_sum; //2 byte 
-    } user_setting;
-
-    typedef struct //tong 28byte
-    {
-        uint32_t IDX; //4byte
-        uint8_t ID[13]; //13 byte: 0->12
-     
-        uint8_t trang_thai; //1 byte
-        uint16_t so_tu; //2 byte
-        uint8_t send_data_check; //1 byte
-
-        uint8_t ngay; //1 byte
-        uint8_t thang; //1 byte
-        uint8_t nam; //1 byte
-        uint8_t gio; //1 byte
-        uint8_t phut; //1 byte
-
-        uint16_t check_sum; //2 byte   
-    } hanh_dong;
 
     extern RTC_DS1307 rtc;
-    
     extern U8G2_ST7920_128X64_F_HW_SPI u8g2;
     extern volatile uint64_t ID;
-    extern char ID_Master[13];
-    extern uint8_t tuchuasd[24];
-    extern ExternalEEPROM myMem;
-    extern ExternalEEPROM myMem2;
+    extern uint8_t tuchuasd[200];
+    extern uint16_t Tong_tu_chua_SD;
+    
     extern char apSSID[30];
     extern String socuoiID;
-    extern String WSSID;
-    extern String bufferGM65;
 
     extern uint32_t IDX_hien_tai;
     extern uint32_t dia_chi_IDX_hien_tai;
 
-    extern boolean check_read_eeprom_1;
-    extern boolean check_read_eeprom_2;
     extern bool check_send_tong_so_tu;
     extern bool check_send_card_info;
-    extern bool check_update_FOTA;
     extern bool check_update_machine;
-    extern bool check_his_send;
-
-    extern uint16_t Tong_tu_chua_SD;
+    // extern bool check_his_send;
+    extern int server_check_connect;
     extern uint16_t diachi_giaodich;
 
     unsigned short cal_crc_loop_CCITT_A(short l, unsigned char *p);
@@ -262,7 +288,7 @@ namespace VHITEK
     bool accessMDBBus(std::function<void()> &&Callback, uint32_t timeout);
 
     extern BillValidator Validator;
-    namespace bill
+    namespace BILL
     {
         extern long soTienDaNhan;
         extern long soTienChuaNhan;
@@ -271,38 +297,38 @@ namespace VHITEK
 
     namespace EEPROM
     {
+        extern ExternalEEPROM myMem;
+        extern ExternalEEPROM myMem2;
+
+        extern bool check_read_eeprom_1_Machine;
+        extern bool check_read_eeprom_1_Cabine;
+        extern bool check_read_eeprom_2;
+
         void begin();
 
         int16_t sumCalc_EEP_1_Machine(setting_machine data);
-        bool write_EEP_1_Machine(setting_machine user_check); //Lưu cài đặt máy
+        bool write_EEP_1_Machine(); //Lưu cài đặt máy
         setting_machine read_EEP_1_Machine(); //Đọc cài đặt máy
 
         int16_t sumCalc_EEP_1_Cabine(cabine_config data);
         bool write_EEP_1_Cabine(cabine_config user_check); //lưu config tủ
         cabine_config read_EEP_1_Cabine(uint16_t so_tu); //Đọc config tủ
 
-        int16_t sumCalc_eeprom_2(hanh_dong data);
-        bool write_eeprom_2(hanh_dong giaodich);
-        hanh_dong read_eeprom_2(uint16_t dia_chi);
+        int16_t sumCalc_eeprom_2(cabine_transac data);
+        bool write_eeprom_2(cabine_transac giaodich);
+        cabine_transac read_eeprom_2(uint16_t dia_chi);
     }
 
-    namespace mo_tu_locker
+    namespace ACTION
     {
-        bool kiem_tra_dung_tu(uint16_t so_tu, user_setting user_check);
-        void hanh_dong_mo_tu(uint16_t so_tu);
+        void Locker_NB_RFID();  // Locker nội bội dùng RFID
         void mo_cua_cuon();
-        void mo_tu_locker();
-        void locker_Barcode();
-        void locker_button();
-        bool locker_open(uint8_t id);
-        int read_locker_status(uint16_t locker_id);
     }
 
     namespace transaction
     {
-        void luu_hanh_dong(uint16_t so_tu, uint8_t trang_thai);
+        void save_trans(uint16_t so_tu, uint8_t cabine_status); //lưu trans
         void load_du_lieu();
-        void XEM_eeprom_2(uint32_t IDX);
     }
 
     namespace Ds1307
@@ -314,29 +340,32 @@ namespace VHITEK
 
     namespace Config
     {
+        void begin();
+        
         setting_machine get_setting_machine(); //đọc cài đặt máy
         bool Save_Set_Machine(); //Lưu setting máy, ô 1000
 
         void Send_Printer(uint16_t add, uint16_t sotu, String data);
         void Send_Music(uint16_t add, uint16_t sobaihat, uint16_t timeout);
 
-        String toJson(hanh_dong data);
+        String Json_his(cabine_transac data); //lich su giao dich
         String Json_tong_tu(); //Tao Json tong so tu
-        String Json_thong_tin_tu(user_setting user); //Tao Json thong tin tu
+        // String Json_thong_tin_tu(user_setting user); //Tao Json thong tin tu
         String Json_machine_status(); //Tao Json tinh trang may
         
         uint16_t tinh_o_luu_the(uint16_t so_tu); //tinh o bat dau luu the theo so tu
         bool kiem_tra_tu_da_co(uint16_t so_tu); //Kiem tra xem so tu nay da luu chua
         int so_sanh_mk_menu(char *mk);
-        void xem_eeprom_tu_bat_ky(int so_tu);
-        void xem_tung_o();
         void All_Clear_eeprom(int eep, uint16_t Max_diachi); // Xoa toan bo IC eeprom luu hanh dong mo cua
-        
-        String loadChipID();
+        void decodeID(uint16_t sotu_INPUT, uint16_t &id, uint16_t &add);
+        bool read_locker(uint16_t sotu); //gửi lệnh đọc trạng thái tủ
+        bool openlocker(uint16_t sotu); //Gửi lệnh Mở tủ
+        bool Open_IO(uint16_t so_tu); //Hành động mở tủ
 
-        void Test_led();
+        String loadChipID();
+        int get_temp(); //đọc nhiệt độ ESP32
         int Wifi_RSSI(); //RSSI cua Wifi
-        uint16_t KT_tong_tu_chua_SD(); //Tinh tong so tu chua su dung
+        void KT_tong_tu_chua_SD(); //Tinh tong so tu chua su dung
     }
 
     namespace RFID
@@ -395,9 +424,10 @@ namespace VHITEK
         void TB_tu_chua_su_dung();
         void thong_bao_tu_da_co();
         void TB_update_FOTA(); //man hinh thong bao update Fimware
-        void hienthiLOGO(); //hiện logo TSE or VHITEK
         void TB_2_sotu_bangnhau();
         void TB_ADD_khac_0(); //TB địa chỉ nhập vào phải lớn hơn 0
+        void TB_dang_KT_cai_dat();
+        void TB_Server_Disconnect(); //TB mất kết nối Server
     }
 
     namespace Keypad
@@ -420,6 +450,7 @@ namespace VHITEK
 
     namespace FOTA
     {
+        extern bool check_update_FOTA;
         void FOTAbegin();
         void Star_update();
     }

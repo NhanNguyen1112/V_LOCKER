@@ -4,6 +4,13 @@ namespace VHITEK
 {
     namespace EEPROM
     {
+        bool check_read_eeprom_1_Machine;
+        bool check_read_eeprom_1_Cabine;
+        bool check_read_eeprom_2;
+
+        ExternalEEPROM myMem;
+        ExternalEEPROM myMem2;
+
         void begin()
         {
             Wire1.begin(16, 17,400000); // IC EEPROM U10: 0x51, U8: 0x53
@@ -37,14 +44,14 @@ namespace VHITEK
             uint16_t sum = cal_crc_loop_CCITT_A(dataSize, buffer);
             return sum;
         }  
-        bool write_EEP_1_Machine(setting_machine user_check) //Lưu cài đặt máy
+        bool write_EEP_1_Machine() //Lưu cài đặt máy
         {
             setting_machine read_check_sum;
             byte check_dung=0;
             
-            user_check.check_sum=sumCalc_EEP_1_Machine(user_check);
+            save_config_machine.check_sum=sumCalc_EEP_1_Machine(save_config_machine);
             accessI2C1Bus([&]{
-                    myMem.put(1000, user_check); //luu vao eeprom             
+                    myMem.put(1000, save_config_machine); //luu vao eeprom             
             }, 100);    
 
             accessI2C1Bus([&]{
@@ -54,7 +61,7 @@ namespace VHITEK
 
             for(int i=0; i<3; i++) //sao sanh 3 lan
             {
-                if(user_check.check_sum == read_check_sum.check_sum) //neu Sum nhap voa va sum luu bang nhau
+                if(save_config_machine.check_sum == read_check_sum.check_sum) //neu Sum nhap voa va sum luu bang nhau
                 {
                     check_dung ++;
                 }
@@ -69,26 +76,26 @@ namespace VHITEK
             if(check_dung == 3) //neu dung
             {
                 // Serial.print("Check Dung: "); Serial.println(check_dung);
-                // VHITEK::Config::xem_eeprom_tu_bat_ky(user_check.so_tu);
+                // VHITEK::Config::xem_eeprom_tu_bat_ky(save_config_machine.so_tu);
                 // VHITEK::Config::xem_tung_o();
                 return true;
             }
             else //SAI -> ghi lai -> check lai
             {
-                user_check.check_sum=sumCalc_EEP_1_Machine(user_check);
+                save_config_machine.check_sum=sumCalc_EEP_1_Machine(save_config_machine);
                 accessI2C1Bus([&]{
-                        myMem.put(1000, user_check); //luu vao eeprom              
+                        myMem.put(1000, save_config_machine); //luu vao eeprom              
                 }, 100);    
 
                 accessI2C1Bus([&]{
                         myMem.get(1000, read_check_sum); //Doc check dum duoc luu trong EEPROM             
                 }, 100);    
 
-                if(user_check.check_sum == read_check_sum.check_sum) //neu dung
+                if(save_config_machine.check_sum == read_check_sum.check_sum) //neu dung
                 {
                     return true;
                     // Serial.println("DUNG - da check: ");
-                    // VHITEK::Config::xem_eeprom_tu_bat_ky(user_check.so_tu);
+                    // VHITEK::Config::xem_eeprom_tu_bat_ky(save_config_machine.so_tu);
                     // VHITEK::Config::xem_tung_o();
                 }         
                 else //sai -> xoa luon
@@ -99,7 +106,7 @@ namespace VHITEK
                             myMem.put(1000, read_check_sum); //luu vao eeprom              
                     }, 100);        
 
-                    // VHITEK::Config::xem_eeprom_tu_bat_ky(user_check.so_tu);
+                    // VHITEK::Config::xem_eeprom_tu_bat_ky(save_config_machine.so_tu);
                     // VHITEK::Config::xem_tung_o();
 
                     return false;
@@ -231,20 +238,20 @@ namespace VHITEK
 
             if(Sum_cal == user_read_eeprom.check_sum) //Neu check SUM dung
             {
-                // check_read_eeprom_1 = true;
+                check_read_eeprom_1_Cabine = true;
                 return user_read_eeprom;
             }
-            // else check_read_eeprom_1 = false;
+            else check_read_eeprom_1_Cabine = false;
 
             // Serial.printf("So tu: %d - SUM_cal: %d - SUM eeprom: %d\n", so_tu, Sum_cal, user_read_eeprom.check_sum);
         }
 
 //////////////////////// EEPROM 2 ////////////////////////////////
 
-        int16_t sumCalc_eeprom_2(hanh_dong data)
+        int16_t sumCalc_eeprom_2(cabine_transac data)
         {
             int len = sizeof(data);
-            uint8_t buffer[50];
+            uint8_t buffer[150];
             uint8_t *ptr = (uint8_t *)&data;
             uint8_t dataSize = 0;
             for (int i = 0; i < len; i++)
@@ -259,12 +266,12 @@ namespace VHITEK
             uint16_t sum = cal_crc_loop_CCITT_A(dataSize, buffer);
             return sum;
         } 
-        bool write_eeprom_2(hanh_dong giaodich)
+        bool write_eeprom_2(cabine_transac giaodich)
         {
-            hanh_dong read_check_sum;
+            cabine_transac read_check_sum;
             byte check_dung=0;
 
-            giaodich.check_sum = sumCalc_eeprom_2(giaodich); //tinh check sum cua hanh_dong
+            giaodich.check_sum = sumCalc_eeprom_2(giaodich); //tinh check sum cua cabine_transac
             accessI2C1Bus([&]{
                     myMem2.put(dia_chi_IDX_hien_tai, giaodich); //luu vao eeprom             
             }, 100); 
@@ -294,7 +301,7 @@ namespace VHITEK
             }
             else 
             {
-                giaodich.check_sum = sumCalc_eeprom_2(giaodich); //tinh check sum cua hanh_dong
+                giaodich.check_sum = sumCalc_eeprom_2(giaodich); //tinh check sum cua cabine_transac
                 accessI2C1Bus([&]{
                         myMem2.put(dia_chi_IDX_hien_tai, giaodich); //luu vao eeprom             
                 }, 100); 
@@ -318,10 +325,10 @@ namespace VHITEK
                 }  
             }
         }
-        hanh_dong read_eeprom_2(uint16_t dia_chi)
+        cabine_transac read_eeprom_2(uint16_t dia_chi)
         {
             uint16_t Sum_cal;
-            hanh_dong read_check_sum;
+            cabine_transac read_check_sum;
 
             accessI2C1Bus([&]{
                     myMem2.get(dia_chi, read_check_sum); //Doc Check SUM trong eeprom              
@@ -336,7 +343,7 @@ namespace VHITEK
                 return read_check_sum;
             }
             else check_read_eeprom_2 = false;
-        }
+        } 
 
     }
 }
