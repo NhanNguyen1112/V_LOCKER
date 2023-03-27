@@ -26,7 +26,7 @@ namespace VHITEK
             ESPConnect.autoConnect(apSSID);
             AsyncElegantOTA.begin(&server); // Start ElegantOTA
             char OTAID[50];
-            sprintf(OTAID, "%s|FW : %s", apSSID, FW);
+            sprintf(OTAID, "%s|FW : %s", apSSID, FW_VERSION);
             AsyncElegantOTA.setID(OTAID);
             if (ESPConnect.begin(&server))
             {

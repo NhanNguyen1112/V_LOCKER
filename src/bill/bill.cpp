@@ -46,6 +46,8 @@ namespace VHITEK
             Validator.begin(getBVProtocol(5, 18, &Serial1)); 
             Validator.BV->setPayoutValue(VHITEK::save_config_machine.BILL.payout); // set giá tiền thối
             Validator.BV->setBillsMinMax(VHITEK::save_config_machine.BILL.billmin, VHITEK::save_config_machine.BILL.billmax); //Set tiền nhận Min, Max
+            // Validator.BV->setPayoutValue(10000); // set giá tiền thối
+            // Validator.BV->setBillsMinMax(5000, 50000); //Set tiền nhận Min, Max
             Validator.BV->reset();
             Validator.BV->init();
             Validator.BV->on(BV_EVENT_BILL_STACKED_RECLYER, OnCreditCallback);
@@ -55,14 +57,14 @@ namespace VHITEK
             // Serial.println("exit bill begin");
         }
 
-        /*int32_t tinh_tien(time_ship TimeGui, time_ship TimeNhan)
+        int32_t tinh_tien(thoigian TimeGui, thoigian TimeNhan)
         {
             int32_t total_revenue=0;
             int32_t total_block2_revenue=0;
-            int32_t block1minutes = Price_setup.block1_minutes;
-            int32_t block1price = Price_setup.block1_price;
-            int32_t block2minutes = Price_setup.block2_minutes;
-            int32_t block2price = Price_setup.block2_price;
+            int32_t block1minutes = save_config_machine.Gia_Thue_Tu.block1_minutes;
+            int32_t block1price = save_config_machine.Gia_Thue_Tu.block1_price;
+            int32_t block2minutes = save_config_machine.Gia_Thue_Tu.block2_minutes;
+            int32_t block2price = save_config_machine.Gia_Thue_Tu.block2_price;
 
             int32_t timestamp_gui = VHITEK::Ds1307::ToTimeStamp(TimeGui);
             int32_t timestamp_nhan = VHITEK::Ds1307::ToTimeStamp(TimeNhan);
@@ -86,7 +88,7 @@ namespace VHITEK
             total_revenue = total_block2_revenue + block1price;
             Serial.printf("Tổng tiền: %d\n", total_revenue);
             return total_revenue;
-        } */
+        }
 
         /*void test_tinh_tien()
         {

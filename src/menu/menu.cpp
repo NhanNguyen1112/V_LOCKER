@@ -1367,7 +1367,7 @@ namespace VHITEK
             u8g2.setCursor(65,25);
             u8g2.printf("Firmware:"); 
             u8g2.setCursor(80,35);
-            u8g2.print(FW);            
+            u8g2.print(FW_VERSION);            
             u8g2.setCursor(65,50);
             u8g2.printf("SSID:");                                     
             u8g2.setCursor(65, 60);

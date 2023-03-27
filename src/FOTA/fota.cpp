@@ -6,13 +6,13 @@ namespace VHITEK
     {
         bool check_update_FOTA;
 
-        esp32FOTA FOTA(FW_TYPE, FW_server, false);
+        esp32FOTA FOTA(BOARD_TYPE, FW_server, false);
 
         void FOTAbegin()
         {
             //http://159.223.48.4:8000/users/getversionmachine/{id}/{version}
             char url[200];
-            sprintf(url,"http://%s:8000/locker/getversionmachine/%s/%s/%d",API,apSSID,FW_TYPE,FW_server);
+            sprintf(url,"http://%s:8000/locker/getversionmachine/%s/%s/%d",API,apSSID,BOARD_TYPE,FW_server);
             FOTA.checkURL=String(url);
             // Serial.println(FOTA.checkURL);
         }

@@ -149,7 +149,8 @@ namespace VHITEK
     if(VHITEK::server_check_connect>=5) VHITEK::Display::TB_Server_Disconnect();
     else
     {
-      VHITEK::ACTION::Locker_NB_RFID();
+      // VHITEK::ACTION::Locker_NB_RFID();
+      VHITEK::ACTION::Locker_Ship_BARCODE();
     } 
   }
 
@@ -183,6 +184,7 @@ namespace VHITEK
       { 
         working();
       }
+
       delay(10);
     }
   }
@@ -194,6 +196,7 @@ namespace VHITEK
     uint32_t lastTick_FOTA=0;
     uint32_t lastTick_wifi=0;
     uint32_t lastTick_status_machine=0;
+    uint32_t lastTick_Cal_Money=0;
 
     while(1)
     {
@@ -301,6 +304,51 @@ namespace VHITEK
         }
       }
 
+      if((WiFi.status() == WL_CONNECTED)) //Doc cai dat gia thue tu Server
+      {
+        // bill_price_setup Price_read;
+        if ( ((uint32_t)(millis() - lastTick_Cal_Money) > 3000) ) //3s check 1 lan
+        {
+          char url[1024];
+          HTTPClient http;
+          sprintf(url, "http://%s:8000/shipperlocker/get-calc-money-infor/", API);
+          http.begin(url); //API
+          http.addHeader("Content-Type", "application/json");              
+
+          int httpResponseCode = http.GET();
+          // Serial.println(apiurl.c_str());       
+
+          if (httpResponseCode == 200)  //Check for the returning code
+          { 
+            String payload = http.getString();
+            DeserializationError error = deserializeJson(doc, payload);
+            if (error == 0)
+            {
+              if(doc["block1minutes"].as<int>()!=save_config_machine.Gia_Thue_Tu.block1_minutes or doc["block1price"].as<int>()!=save_config_machine.Gia_Thue_Tu.block1_price or
+                doc["block2minutes"].as<int>()!=save_config_machine.Gia_Thue_Tu.block2_minutes or doc["block2price"].as<int>()!=save_config_machine.Gia_Thue_Tu.block2_price)
+              {
+                save_config_machine.Gia_Thue_Tu.block1_minutes = doc["block1minutes"].as<int>();
+                save_config_machine.Gia_Thue_Tu.block1_price = doc["block1price"].as<int>();
+                save_config_machine.Gia_Thue_Tu.block2_minutes = doc["block2minutes"].as<int>();
+                save_config_machine.Gia_Thue_Tu.block2_price = doc["block2price"].as<int>(); 
+
+                VHITEK::Config::Save_Set_Machine();
+
+                // Serial.println("Da luu cai dat gia moi");
+              }        
+            }
+          }
+          else 
+          {
+            Serial.print("Error Code: ");
+            Serial.println(httpResponseCode);
+          }
+          http.end();  
+
+          lastTick_Cal_Money = millis();
+        }
+      }
+
       delay(10);
     }
   }
@@ -309,9 +357,7 @@ namespace VHITEK
   {
     Serial.begin(115200);
     Wire.begin(25, 26, 400000); // Init I2C cua: KeyPad, DS1307
-
     Serial1.begin(9600, SERIAL_8N1, 18, 5, false); //BILL
-    
     Serial2.begin(115200, SERIAL_8N1, 23, 22, false); //RS485
    
     // Khoi tao Semaphore
@@ -320,17 +366,13 @@ namespace VHITEK
     vSemaphoreCreateBinary(SPISemaphoreHandle);
     vSemaphoreCreateBinary(MDBSemaphoreHandle);
 
-#ifdef mocua
-    pinMode(PIN_PUMP, OUTPUT);
-    pinMode(PIN_VAL1, OUTPUT);
-    pinMode(PIN_VAL2, OUTPUT);
-#else
-    pinMode(PIN_595_LATCH, OUTPUT);
-    pinMode(PIN_595_DATA, OUTPUT);
-    pinMode(PIN_595_CLOCK, OUTPUT);
-    pinMode(PIN_165_LATCH, OUTPUT);
-    pinMode(PIN_ENC1, INPUT_PULLUP);
-#endif
+    #ifdef mocua
+        pinMode(PIN_PUMP, OUTPUT);
+        pinMode(PIN_VAL1, OUTPUT);
+        pinMode(PIN_VAL2, OUTPUT);
+    #else
+        pinMode(PIN_ENC1, INPUT_PULLUP);
+    #endif
 
     // ENABLE THE LEVEL SHIFTER (I2C BUS, SERIAL 1 BUS)
     pinMode(PIN_LEVEL_SHIFTER_ENABLE, OUTPUT);
@@ -342,18 +384,18 @@ namespace VHITEK
     Keypad::setup();
     RFID::begin();
     Ds1307::begin();
-    VHITEK::FOTA::FOTAbegin();
     VHITEK::OTA::WifiBegin();
+    VHITEK::FOTA::FOTAbegin();
     VHITEK::Config::begin();
-    // VHITEK::BILL::begin();
+    VHITEK::BILL::begin();
 
-    // VHITEK::Config::All_Clear_eeprom(2, 1000);
+    // VHITEK::Config::All_Clear_eeprom(2, 10000);
     VHITEK::transaction::load_du_lieu();
 
     // Start Keypad Task
     xTaskCreateUniversal(taskKeypad, "taskKeypad", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
     xTaskCreateUniversal(mainTask, "mainTask", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
-    xTaskCreateUniversal(_Synch_Task, "Task_synch", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
+    // xTaskCreateUniversal(_Synch_Task, "Task_synch", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
 
     // Serial.println(sizeof(save_config_machine));
     // Serial.println(sizeof(save_cabine));
@@ -368,7 +410,7 @@ void setup()
 
 void loop()
 {
-  DynamicJsonDocument doc(10000);
+  static DynamicJsonDocument doc(10000);
   static char buffer[200];
   static int ptr = 0;
 
@@ -398,17 +440,18 @@ void loop()
         int addMas = doc["addMas"].as<int>();
         int add = doc["add"].as<int>();
 
-        Serial.println("READ PORT: ");
-        serializeJson(doc, Serial);
-        Serial.println();
+        // Serial.println("READ PORT: ");
+        // serializeJson(doc, Serial);
+        // Serial.println();
 
         if(addMas == 1)
         {
           if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_QR) //Module QR
           {
             VHITEK::QRread.add = add;
-            VHITEK::QRread.data = doc["data"].as<String>();
+            VHITEK::QRread.data = doc["data"].as<String>().c_str();
             VHITEK::QRread.check_sum = doc["crc"].as<uint16_t>();
+            VHITEK::ACTION::start_rece = 1;
           }
           else if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_Music) //Music
           {

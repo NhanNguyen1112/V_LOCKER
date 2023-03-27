@@ -4,6 +4,8 @@ namespace VHITEK
 {
     namespace ACTION
     {
+        int start_rece=0;
+
         uint16_t addIO, sotuIO;
         bool trang_thai_cua = 0; // 0 la dong, 1 la mo duoc
 
@@ -93,7 +95,9 @@ namespace VHITEK
                 VHITEK::Display::hien_ngay_gio();
             }
         }
-#else 
+#endif
+
+#ifdef Locker_NoiBo
         bool Doi_pass(cabine_config user_check) //Kiểm tra & ĐỔI MK
         {
             cabine_config doc_id;
@@ -542,6 +546,159 @@ namespace VHITEK
                     }
                 }
             }
+        }
+#endif
+
+#ifdef Locker_Ship_Barcode
+
+        /*void VNP_NewOrder()
+        {
+            if((WiFi.status() == WL_CONNECTED)) //Giao dịch VNPAY
+            {
+                // HTTPClient http;
+                // http.begin("http://159.223.48.4:8000/payments/vnpay/newOrders"); //API
+                // http.addHeader("Content-Type", "application/json");              
+                // String json_data=VHITEK::Config::Json_vnpay_neworder(IDX_hien_tai, Tong_tien, ran);
+                // // Serial.println(VHITEK::Config::Json_vnpay_neworder(IDX_hien_tai, Tong_tien, ran).c_str());
+
+                // int post = http.POST(json_data.c_str());
+                // String payload = http.getString();
+                // // Serial.println(payload);
+
+                // if (post == 200)  //Check for the returning code
+                // { 
+                //     DeserializationError error = deserializeJson(doc, payload);
+                //     if (error == 0)
+                //     {
+                //     if(doc["qrData"].as<String>()) //NEU da gui duoc
+                //     {
+                //         // Serial.println(doc["qrData"].as<String>());
+                //         QRVNpay = doc["qrData"].as<String>();
+                //         LastTick_VNPAY=millis();
+                //         flag_vnpay_neworder = 2;         
+                //     }
+                //     }
+                // }
+                // http.end();
+            }
+        }
+
+        void Server_info_shipper(cabine_config sender) //gửi thông tin Sender
+        {
+            DynamicJsonDocument doc(10000);
+            if((WiFi.status() == WL_CONNECTED))
+            {
+                char url[1024];
+                HTTPClient http;
+                sprintf(url, "http://%s:8000/shipperlocker/saveinforlockershipper", API);
+                http.begin(url); //info shipper
+                http.addHeader("Content-Type", "application/json");              
+                String json_data=VHITEK::Config::Json_info_shipper(sender);
+                // Serial.println(VHITEK::Config::Json_info_shipper(info_shipper).c_str());
+
+                int post = http.POST(json_data.c_str());
+                String payload = http.getString();
+                // Serial.println(payload); 
+
+                if (post == 200)  //Check for the returning code
+                { 
+                    DeserializationError error = deserializeJson(doc, payload);
+                    if (error == 0)
+                    {
+                        if(doc["status"].as<boolean>() == true) //NEU da gui duoc
+                        {
+                            if(doc["status"].as<String>() == "success")
+                            {
+                                Serial.printf("Đã gửi được thông tin Sender\n");
+                            }
+                            else Serial.printf("KHÔNG GỬI được thông tin Sender\n");
+                        }
+                    }
+                }
+                http.end();
+            }
+        } */
+
+        void Locker_Ship_BARCODE()
+        {
+            static cabine_config sender;
+            static int step=0;
+            static int run=0;
+
+            // Serial.printf("Nút nhấn: %d\n", digitalRead(PIN_ENC1));
+
+            if(digitalRead(PIN_ENC1)==0)
+            {
+                if(run==0) run=1;
+            }
+            else // Man hinh chinh: hien thi Ngay, Gio; Check Update Firmware 30s 1 lan
+            {
+                if (VHITEK::FOTA::check_update_FOTA == true) VHITEK::Display::TB_update_FOTA();
+                else VHITEK::Display::hien_ngay_gio();
+            }
+
+            while(run==1) //gửi hàng
+            {
+                static String Barcode;
+                if(step==0) //Tìm tủ chưa sử dụng
+                {
+                    step=1;
+                }
+                else if(step==1) //in Barcode
+                {
+                    Barcode = Config::xuatbarcode(1);
+                    VHITEK::Config::Send_Printer(save_config_machine.Sub_boar.Add_Module_Printer, 1, Barcode);
+                    delay(100);
+                    step=2;                      
+                }
+                else if(step==2) //Mở cửa
+                {
+                    u8g2.clearBuffer();
+                    u8g2.drawXBM(0, 0, 128, 64, tudamo_bits);
+                    u8g2.sendBuffer();
+
+                    delay(2000);
+                    step=3;
+                }
+                else if(step==3) //chờ đóng cửa
+                {
+                    // u8g2.clearBuffer(); 
+                    // u8g2.drawXBM(0, 0, 128, 64, DeHangVaoDongCua_bits);
+                    // u8g2.sendBuffer();
+                    delay(2000);
+                }
+                else if(step==4) //Lưu thông tin Sender
+                {
+                    sender.sotu = 1;
+                    sender.time_sender = thoi_gian;
+                    sender.barcode = Barcode;
+
+                    VHITEK::EEPROM::write_EEP_1_Cabine(sender);
+                    step=3;
+                }
+                else if(step==5) //Gửi thông tin gửi hàng lên Server
+                {
+                    // Server_info_shipper(sender);
+                    delay(1000);
+                    step=0; run=0;
+                    break;
+                }
+            }
+
+            while(start_rece==1) //Nhận hàng
+            {
+                if(step==0)
+                {
+                    Serial.print("Barcode: "); Serial.println(QRread.data);
+                    delay(100);
+                    step=1;
+                }
+                else if(step==1)
+                {
+                    ;;
+                }
+            }
+
         }
 
 #endif

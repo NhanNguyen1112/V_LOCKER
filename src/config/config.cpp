@@ -23,7 +23,6 @@ namespace VHITEK
             serializeJson(doc, Serial2);
             Serial2.write(0x7E);
         }
-
         void Send_Music(uint16_t add, uint16_t sobaihat, uint16_t timeout)
         {
             doc.clear();
@@ -61,6 +60,25 @@ namespace VHITEK
             Serial2.write(0x7F);
             serializeJson(doc, Serial2);
             Serial2.write(0x7E);
+        }
+        String Json_info_shipper(cabine_config data) // Tao Json luu info shipper
+        {
+            DynamicJsonDocument doc(10000);
+            char rData[2048];
+            char Time_send[25];
+
+            sprintf(Time_send, "%04d-%02d-%02dT%02d:%02d:00.086Z",
+                    data.time_sender.nam, data.time_sender.thang, data.time_sender.ngay, data.time_sender.gio, data.time_sender.phut);
+
+            doc["lockerid"] = data.sotu;
+            doc["time"] = Time_send;
+            doc["size"] = data.size;
+            doc["phonesender"] = data.sdt_gui;
+            doc["phonereceiver"] = data.sdt_nhan;
+            doc["lockermachineid"] = apSSID;
+
+            serializeJson(doc, rData);
+            return String(rData);
         }
 
         bool read_locker(uint16_t sotu) //Đọc trạng thái tủ
@@ -184,7 +202,7 @@ namespace VHITEK
             doc["error"] = 0;
             doc["emptycabined"] = Tong_tu_chua_SD;
             doc["lockermachineid"] = apSSID;
-            doc["version"] = FW;
+            doc["version"] = FW_VERSION;
 
             int total_elm=0;
             // for (int i=1;i<=save_config_machine.tongtu;i++)
@@ -197,6 +215,33 @@ namespace VHITEK
 
             serializeJson(doc, rData);
             return String(rData);  
+        }
+
+        String Json_vnpay_neworder(uint32_t IDX, int32_t tongtien, int32_t random) //Tạo giao dich VNPAY moi 
+        {
+            DynamicJsonDocument doc(10000);
+            char rData[2048];
+
+            doc["mTransactionId"] = IDX;
+            doc["transactionId"] = random;
+            doc["amount"] = tongtien;
+            doc["col"] = 0;
+            doc["mID"] = apSSID;
+
+            serializeJson(doc, rData);
+            return String(rData);
+        }
+        String Json_vnpay_check(uint32_t IDX, int32_t random) //Thực hiện thanh toán
+        {
+            DynamicJsonDocument doc(10000);
+            char rData[2048];
+
+            doc["mTransactionId"] = IDX;
+            doc["transactionId"] = random;
+            doc["mID"] = apSSID;
+
+            serializeJson(doc, rData);
+            return String(rData);
         }
 
         String loadChipID()
@@ -326,7 +371,7 @@ namespace VHITEK
                 if(kiem_tra_tu_da_co(sotu) == 0)
                 {
                     tuchuasd[vitri] = sotu;
-                    Serial.printf("%d ", tuchuasd[vitri]);
+                    // Serial.printf("%d ", tuchuasd[vitri]);
                     Tong_tu_chua_SD++;
                     vitri++;
                 }
@@ -334,9 +379,9 @@ namespace VHITEK
             // Serial.printf("Tong tu chua sd: %d \n", Tong_tu_chua_SD);
         }
 
-        setting_machine get_setting_machine() //đọc cài đặt máy
+        void get_setting_machine() //đọc cài đặt máy
         {
-            return save_config_machine = VHITEK::EEPROM::read_EEP_1_Machine();
+            save_config_machine = VHITEK::EEPROM::read_EEP_1_Machine();
         }
 
         bool Save_Set_Machine() //Lưu setting máy, ô 1000
@@ -375,7 +420,42 @@ namespace VHITEK
             return String(buffer);
         }
 
-        // void 
+        void QR_VNP(String QR) //Hiện QR VNP
+        {
+            QRCode qrcode;
+            uint8_t LCDType = 1;
+            uint8_t qrcodeData[qrcode_getBufferSize(11)];
+            char wQR[2000];
+            sprintf(wQR, "%s", QR.c_str());
+            qrcode_initText(&qrcode, qrcodeData, 9, ECC_MEDIUM, wQR);
+
+            u8g2.clearBuffer();
+            if (LCDType)    u8g2.drawBox(0, 0, 64, 64);
+            const uint8_t y0 = (64 - qrcode.size) / 2;
+            const uint8_t x0 = (64 - qrcode.size) / 2;
+            for (uint8_t y = 0; y < qrcode.size; y++)
+            {
+                for (uint8_t x = 0; x < qrcode.size; x++)
+                {
+                    if (qrcode_getModule(&qrcode, x, y))
+                    {
+                        if (LCDType == 0)
+                            u8g2.setColorIndex(1);
+                        else
+                            u8g2.setColorIndex(0);
+                    }
+                    else
+                    {
+                        if (LCDType == 0)
+                            u8g2.setColorIndex(0);
+                        else
+                            u8g2.setColorIndex(1);
+                    }
+                    u8g2.drawPixel(x0 + x, y0 + y);
+                }
+            }
+            u8g2.setColorIndex(1);
+        }
 
         void begin()
         {

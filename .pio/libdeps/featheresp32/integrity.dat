@@ -1,12 +1,12 @@
-bblanchon/ArduinoJson@^6.17.3
-davetcc/TaskManagerIO@^1.2.3
-ricmoo/QRCode@^0.0.1
-olikraus/U8g2@^2.33.8
-neu-rah/streamFlow@0.0.0-alpha+sha.bf16ce8926
-davetcc/IoAbstraction@^2.0.3
-https://github.com/me-no-dev/ESPAsyncWebServer.git
-adafruit/Adafruit Thermal Printer Library@^1.4.1
-sparkfun/SparkFun External EEPROM Arduino Library@^1.0.3
-chrisjoyce911/esp32FOTA@^0.1.6
 me-no-dev/AsyncTCP@^1.1.1
+bblanchon/ArduinoJson@^6.17.3
+neu-rah/streamFlow@0.0.0-alpha+sha.bf16ce8926
+olikraus/U8g2@^2.33.8
+davetcc/TaskManagerIO@^1.2.3
+chrisjoyce911/esp32FOTA@^0.1.6
 adafruit/RTClib@^1.12.4
+adafruit/Adafruit Thermal Printer Library@^1.4.1
+davetcc/IoAbstraction@^2.0.3
+sparkfun/SparkFun External EEPROM Arduino Library@^1.0.3
+ricmoo/QRCode@^0.0.1
+https://github.com/me-no-dev/ESPAsyncWebServer.git

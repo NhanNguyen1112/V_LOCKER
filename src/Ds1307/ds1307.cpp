@@ -4,6 +4,7 @@ namespace VHITEK
 {
     namespace Ds1307
     {
+        // UnixTime stamp(7);
         // RTC_DS1307 rtc;
 
         void begin()
@@ -19,6 +20,15 @@ namespace VHITEK
                 rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
             }            
             // rtc.adjust(DateTime(2022, 7, 25, 16, 14, 0)); //nam, thang, ngay, gio, phut, giay
+        }
+
+        uint64_t ToTimeStamp(thoigian thoigian)
+        {
+            // stamp.setDateTime(thoigian.nam, thoigian.thang, thoigian.ngay, thoigian.gio, thoigian.phut, thoigian.giay);
+
+            // // Serial.println(stamp.getUnix());
+
+            // return stamp.getUnix();
         }
 
         void loop()

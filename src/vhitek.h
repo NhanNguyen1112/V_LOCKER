@@ -53,21 +53,54 @@ uint8_t temprature_sens_read();
 #define API "159.223.48.4"
 #endif
 
-// #define mocua
+// #define mocua //Mở cửa cuốn của CTY
 #ifdef mocua
 #define Use_RFID
 #endif
 
-#define Locker_NoiBo
+// #define Locker_NoiBo //Locker Nội bộ, dùng RFID
 #ifdef Locker_NoiBo
 #define Use_RFID
 #endif
 
-#define Locker_Shipping
+// #define Locker_Shipping //Locker gửi/nhận hàng, dùng bill, VNP, có music
+#ifdef Locker_Shipping
+#define bill
+#define Use_Music
+#endif
+
+#define Locker_Ship_Barcode //Locker gửi/nhận hàng dùng 1 nút nhấn, bill, đầu đọc QR + máy in nhiệt
+#ifdef Locker_Ship_Barcode
 #define Use_QR
 #define Use_Printer
 #define Use_Music
-#define bill
+#endif
+
+//////////// CHỌN LOGO /////////////////////
+#define logoTSE "TSEVENDING"
+#ifndef logoTSE
+#define logoVHITEK "VHITEK.VN"
+#endif
+
+//////////// CẬP NHẬT PHIÊN BẢN /////////////
+#ifdef Locker_NoiBo
+    #define BOARD_TYPE  "VLOCKER_NOIBO"
+    #define FW_VERSION  "LNB0.0.1"
+    #define FW_server 1
+#endif
+
+#ifdef Locker_Shipping
+    #define BOARD_TYPE  "VLOCKER_SHIPPING"
+    #define FW_VERSION  "LKS0.0.1"
+    #define FW_server 1
+#endif
+
+#ifdef Locker_Ship_Barcode
+    #define BOARD_TYPE  "VLOCKER_SHIP_BARCODE"
+    #define FW_VERSION  "LSB0.0.1"
+    #define FW_server 1
+#endif
+
 /////////////////////////////////////////////
 
 #define MK_khach 123456 //Setup MK cho khach
@@ -83,21 +116,12 @@ uint8_t temprature_sens_read();
 #define PIN_VAL1 27
 #define PIN_VAL2 14
 #else
-#define PIN_595_DATA 12
-#define PIN_595_CLOCK 14
-#define PIN_595_LATCH 27
-#define PIN_165_LATCH 32
-#define PIN_ENC1 34
+// #define PIN_595_DATA 12
+// #define PIN_595_CLOCK 14
+// #define PIN_595_LATCH 27
+// #define PIN_165_LATCH 32
+#define PIN_ENC1 33
 #endif
-
-#define logoTSE "TSEVENDING"
-#ifndef logoTSE
-#define logoVHITEK "VHITEK.VN"
-#endif
-
-#define FW_TYPE  "VLOCKER-V1"
-#define FW  "LK0.0.1"
-#define FW_server 1
 
 namespace VHITEK
 {
@@ -225,7 +249,7 @@ namespace VHITEK
         uint8_t OTP[8];
         uint8_t sdt_gui[12];
         uint8_t sdt_nhan[12];
-        uint8_t barcode[15];
+        String barcode;
         thoigian time_sender;
 
         char chuaSD[20];
@@ -321,8 +345,10 @@ namespace VHITEK
 
     namespace ACTION
     {
+        extern int start_rece;
         void Locker_NB_RFID();  // Locker nội bội dùng RFID
         void mo_cua_cuon();
+        void Locker_Ship_BARCODE();
     }
 
     namespace transaction
@@ -336,13 +362,14 @@ namespace VHITEK
         void begin();
         void loop();
         void xem_thoi_gian();
+        uint64_t ToTimeStamp(thoigian thoigian);
     }
 
     namespace Config
     {
         void begin();
         
-        setting_machine get_setting_machine(); //đọc cài đặt máy
+        void get_setting_machine(); //đọc cài đặt máy
         bool Save_Set_Machine(); //Lưu setting máy, ô 1000
 
         void Send_Printer(uint16_t add, uint16_t sotu, String data);
@@ -352,6 +379,9 @@ namespace VHITEK
         String Json_tong_tu(); //Tao Json tong so tu
         // String Json_thong_tin_tu(user_setting user); //Tao Json thong tin tu
         String Json_machine_status(); //Tao Json tinh trang may
+        String Json_vnpay_neworder(uint32_t IDX, int32_t tongtien, int32_t random); //Tạo giao dich VNPAY moi
+        String Json_vnpay_check(uint32_t IDX, int32_t random); //Thực hiện thanh toán
+        String Json_info_shipper(cabine_config data); // Tao Json luu info shipper
         
         uint16_t tinh_o_luu_the(uint16_t so_tu); //tinh o bat dau luu the theo so tu
         bool kiem_tra_tu_da_co(uint16_t so_tu); //Kiem tra xem so tu nay da luu chua
@@ -361,6 +391,8 @@ namespace VHITEK
         bool read_locker(uint16_t sotu); //gửi lệnh đọc trạng thái tủ
         bool openlocker(uint16_t sotu); //Gửi lệnh Mở tủ
         bool Open_IO(uint16_t so_tu); //Hành động mở tủ
+        String xuatbarcode(uint16_t sotu);       
+        void QR_VNP(String QR); //Hiện QR VNP 
 
         String loadChipID();
         int get_temp(); //đọc nhiệt độ ESP32
