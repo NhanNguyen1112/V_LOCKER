@@ -4,7 +4,7 @@ namespace VHITEK
 {
     namespace Ds1307
     {
-        // UnixTime stamp(7);
+        UnixTime stamp(7);
         // RTC_DS1307 rtc;
 
         void begin()
@@ -24,11 +24,11 @@ namespace VHITEK
 
         uint64_t ToTimeStamp(thoigian thoigian)
         {
-            // stamp.setDateTime(thoigian.nam, thoigian.thang, thoigian.ngay, thoigian.gio, thoigian.phut, thoigian.giay);
+            stamp.setDateTime(thoigian.nam, thoigian.thang, thoigian.ngay, thoigian.gio, thoigian.phut, thoigian.giay);
 
             // // Serial.println(stamp.getUnix());
 
-            // return stamp.getUnix();
+            return stamp.getUnix();
         }
 
         void loop()

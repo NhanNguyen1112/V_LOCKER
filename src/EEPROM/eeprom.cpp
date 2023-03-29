@@ -157,7 +157,7 @@ namespace VHITEK
             cabine_config read_check_sum;
             byte check_dung=0;
 
-            static uint16_t o_luu;
+            uint16_t o_luu;
             o_luu = VHITEK::Config::tinh_o_luu_the(user_check.sotu);
             
             user_check.check_sum=sumCalc_EEP_1_Cabine(user_check);
@@ -168,7 +168,8 @@ namespace VHITEK
             accessI2C1Bus([&]{
                     myMem.get(o_luu, read_check_sum); //Doc check dum duoc luu trong EEPROM            
             }, 100);  
-            // Serial.print("SUM EEPROM: "); Serial.println(read_check_sum.check_sum);
+
+            // Serial.printf("SUM EEPROM: %d - SUM_User: %d\n", read_check_sum.check_sum, user_check.check_sum);
 
             for(int i=0; i<3; i++) //sao sanh 3 lan
             {
@@ -186,7 +187,7 @@ namespace VHITEK
 
             if(check_dung == 3) //neu dung
             {
-                // Serial.print("Check Dung: "); Serial.println(check_dung);
+                // Serial.println("LƯU THÀNH CÔNG 1");
                 // VHITEK::Config::xem_eeprom_tu_bat_ky(user_check.so_tu);
                 // VHITEK::Config::xem_tung_o();
                 return true;
@@ -205,7 +206,7 @@ namespace VHITEK
                 if(user_check.check_sum == read_check_sum.check_sum) //neu dung
                 {
                     return true;
-                    // Serial.println("DUNG - da check: ");
+                    // Serial.println("LƯU THÀNH CÔNG 2");
                     // VHITEK::Config::xem_eeprom_tu_bat_ky(user_check.so_tu);
                     // VHITEK::Config::xem_tung_o();
                 }         
@@ -243,7 +244,7 @@ namespace VHITEK
             }
             else check_read_eeprom_1_Cabine = false;
 
-            // Serial.printf("So tu: %d - SUM_cal: %d - SUM eeprom: %d\n", so_tu, Sum_cal, user_read_eeprom.check_sum);
+            Serial.printf("So tu: %d - SUM_cal: %d - SUM eeprom: %d\n", user_read_eeprom.sotu, Sum_cal, user_read_eeprom.check_sum);
         }
 
 //////////////////////// EEPROM 2 ////////////////////////////////

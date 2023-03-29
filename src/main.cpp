@@ -30,7 +30,7 @@ namespace VHITEK
   uint8_t currentMode = 1; // 0 = menu, 1 = work
 
   volatile uint64_t ID;
-  uint8_t tuchuasd[200];
+  uint16_t tuchuasd[200];
   uint16_t Tong_tu_chua_SD;
 
   thoigian thoi_gian;
@@ -117,6 +117,18 @@ namespace VHITEK
     return false;
   }
 
+  void Bill(void *parameter)
+  {
+    while(1)
+    {
+      accessMDBBus([&]{
+        VHITEK::Validator.BV->loop();
+      }, 2000);
+
+      delay(200);
+    }
+  }
+
   void taskKeypad(void *parameter)
   {
     // Serial.println("Keypad Task Started");
@@ -149,8 +161,13 @@ namespace VHITEK
     if(VHITEK::server_check_connect>=5) VHITEK::Display::TB_Server_Disconnect();
     else
     {
-      // VHITEK::ACTION::Locker_NB_RFID();
+      #ifdef Locker_NoiBo
+      VHITEK::ACTION::Locker_NB_RFID();
+      #endif
+      
+      #ifdef Locker_Ship_Barcode
       VHITEK::ACTION::Locker_Ship_BARCODE();
+      #endif
     } 
   }
 
@@ -222,6 +239,44 @@ namespace VHITEK
         }  
       }
       
+      if(check_send_tong_so_tu == true) //Gui Tong so tu len
+      {
+        if ((WiFi.status() == WL_CONNECTED))
+        {
+          char url[1024];
+          HTTPClient http;
+          sprintf(url, "http://%s:8000/locker/updatetotalcabined", API);
+          http.begin(url); //API
+          http.addHeader("Content-Type", "application/json");   
+
+          String json_data = VHITEK::Config::Json_tong_tu();    
+          int post = http.POST(json_data.c_str());
+          // Serial.println(VHITEK::Config::Json_tong_tu().c_str());
+
+          String payload = http.getString();     
+          // Serial.println(payload);  
+
+          if (post == 200)
+          {
+            DeserializationError error = deserializeJson(doc, payload);
+            if (error == 0)
+            {
+              // Serial.println(doc["status"].as<String>());
+              if(doc["status"].as<boolean>() == true) //NEU da gui duoc
+              {
+                Serial.println("Da gui Tong So Tu");
+                check_send_tong_so_tu = false;              
+              }
+              else 
+              {
+                check_send_tong_so_tu = true; 
+              }
+            }     
+          }
+          http.end();   
+        }
+      }
+
       if((WiFi.status() == WL_CONNECTED)) //Gui trang thai may
       {
         if ( ((uint32_t)(millis() - lastTick_status_machine) > 30000) or check_update_machine == true ) //1s update 1 lan
@@ -245,7 +300,7 @@ namespace VHITEK
             if (error == 0)
             {
               // Serial.println(doc["status"].as<String>());
-              if(doc["status"].as<boolean>() == true) //NEU da gui duoc
+              if(doc["status"].as<bool>() == true) //NEU da gui duoc
               {
                 check_update_machine = false;
                 // Serial.println("Đã gửi được trạng thái máy");             
@@ -311,7 +366,7 @@ namespace VHITEK
         {
           char url[1024];
           HTTPClient http;
-          sprintf(url, "http://%s:8000/shipperlocker/get-calc-money-infor/", API);
+          sprintf(url, "http://%s:8000/shipperlocker/get-calc-money-infor/%s", API, apSSID);
           http.begin(url); //API
           http.addHeader("Content-Type", "application/json");              
 
@@ -321,6 +376,7 @@ namespace VHITEK
           if (httpResponseCode == 200)  //Check for the returning code
           { 
             String payload = http.getString();
+            // Serial.println(payload);
             DeserializationError error = deserializeJson(doc, payload);
             if (error == 0)
             {
@@ -334,14 +390,13 @@ namespace VHITEK
 
                 VHITEK::Config::Save_Set_Machine();
 
-                // Serial.println("Da luu cai dat gia moi");
+                Serial.println("Da luu cai dat gia moi");
               }        
             }
           }
           else 
           {
-            Serial.print("Error Code: ");
-            Serial.println(httpResponseCode);
+            Serial.printf("ERROR Get Giá Thuê: %d\n",httpResponseCode);
           }
           http.end();  
 
@@ -378,24 +433,15 @@ namespace VHITEK
     pinMode(PIN_LEVEL_SHIFTER_ENABLE, OUTPUT);
     digitalWrite(PIN_LEVEL_SHIFTER_ENABLE, HIGH); // Always: HIGH
 
-    VHITEK::EEPROM::begin();
-    VHITEK::Config::loadChipID();
-    Display::setup();
-    Keypad::setup();
-    RFID::begin();
-    Ds1307::begin();
-    VHITEK::OTA::WifiBegin();
-    VHITEK::FOTA::FOTAbegin();
     VHITEK::Config::begin();
     VHITEK::BILL::begin();
-
-    // VHITEK::Config::All_Clear_eeprom(2, 10000);
     VHITEK::transaction::load_du_lieu();
 
     // Start Keypad Task
     xTaskCreateUniversal(taskKeypad, "taskKeypad", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
-    xTaskCreateUniversal(mainTask, "mainTask", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
-    // xTaskCreateUniversal(_Synch_Task, "Task_synch", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
+    xTaskCreateUniversal(mainTask, "mainTask", 10000, NULL, 2, NULL, CONFIG_ARDUINO_RUNNING_CORE);
+    xTaskCreateUniversal(_Synch_Task, "Task_synch", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
+    xTaskCreateUniversal(Bill, "Task_bill", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
 
     // Serial.println(sizeof(save_config_machine));
     // Serial.println(sizeof(save_cabine));

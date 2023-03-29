@@ -121,6 +121,26 @@ namespace VHITEK
             u8g2.printf("MAT KET NOI SERVER");
             u8g2.sendBuffer();
         }
+        void Trang_thanh_toan(String VNPAY, cabine_transac NewTrans)
+        {
+            VHITEK::Config::HT_QR(VNPAY);
+            u8g2.setFont(u8g2_font_profont10_mf); // Courier New Bold 10,12,14,18,24 
+            u8g2.setCursor(70,10);
+            u8g2.printf("QUET MA DE");
+            u8g2.setCursor(70,19);
+            u8g2.printf("THANH TOAN"); 
+            u8g2.setFont(u8g2_font_u8glib_4_tr);
+            u8g2.setCursor(85,26);
+            u8g2.printf("HOAC"); 
+            u8g2.setFont(u8g2_font_profont10_mf);
+            u8g2.setCursor(75,36);
+            u8g2.printf("TIEN MAC"); 
+            u8g2.setCursor(65,52);
+            u8g2.printf("TONG:%d", NewTrans.money); 
+            u8g2.setCursor(65,62);
+            u8g2.printf("NHAN:%ld", VHITEK::BILL::soTienDaNhan);
+            u8g2.sendBuffer();
+        }
 
 #ifdef mocua
         void hien_ngay_gio() //Hien thi ngay, gio tai man hinh chinh

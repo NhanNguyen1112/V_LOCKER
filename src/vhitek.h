@@ -33,6 +33,7 @@
 #include "validatorHelper.h"
 #include <BillValidator.h>
 #include "Adafruit_Thermal.h"
+#include <UnixTime.h>
 
 #ifdef __cplusplus
   extern "C" {
@@ -84,20 +85,20 @@ uint8_t temprature_sens_read();
 
 //////////// CẬP NHẬT PHIÊN BẢN /////////////
 #ifdef Locker_NoiBo
-    #define BOARD_TYPE  "VLOCKER_NOIBO"
-    #define FW_VERSION  "LNB0.0.1"
+    #define BOARD_TYPE  "VLOCKER-V1"
+    #define FW_VERSION  "LK0.0.1"
     #define FW_server 1
 #endif
 
 #ifdef Locker_Shipping
-    #define BOARD_TYPE  "VLOCKER_SHIPPING"
+    #define BOARD_TYPE  "VLOCKER-SHIPPING"
     #define FW_VERSION  "LKS0.0.1"
     #define FW_server 1
 #endif
 
 #ifdef Locker_Ship_Barcode
-    #define BOARD_TYPE  "VLOCKER_SHIP_BARCODE"
-    #define FW_VERSION  "LSB0.0.1"
+    #define BOARD_TYPE  "VLOCKER-SHIPPING"
+    #define FW_VERSION  "LKS0.0.1"
     #define FW_server 1
 #endif
 
@@ -231,9 +232,10 @@ namespace VHITEK
         Sale_set Sale_total;
         uint8_t timerQR;
         bill_price_setup Gia_Thue_Tu;
+        uint32_t PW_Control;
         
         char chuaSD1[50];
-        uint64_t chuaSD2;
+        uint32_t chuaSD2;
         uint64_t chuaSD3;
         
         uint16_t check_sum;
@@ -249,7 +251,7 @@ namespace VHITEK
         uint8_t OTP[8];
         uint8_t sdt_gui[12];
         uint8_t sdt_nhan[12];
-        String barcode;
+        char barcode[15];
         thoigian time_sender;
 
         char chuaSD[20];
@@ -289,7 +291,7 @@ namespace VHITEK
     extern RTC_DS1307 rtc;
     extern U8G2_ST7920_128X64_F_HW_SPI u8g2;
     extern volatile uint64_t ID;
-    extern uint8_t tuchuasd[200];
+    extern uint16_t tuchuasd[200];
     extern uint16_t Tong_tu_chua_SD;
     
     extern char apSSID[30];
@@ -317,6 +319,7 @@ namespace VHITEK
         extern long soTienDaNhan;
         extern long soTienChuaNhan;
         void begin();
+        int32_t tinh_tien(thoigian TimeGui, thoigian TimeNhan);
     }
 
     namespace EEPROM
@@ -392,7 +395,9 @@ namespace VHITEK
         bool openlocker(uint16_t sotu); //Gửi lệnh Mở tủ
         bool Open_IO(uint16_t so_tu); //Hành động mở tủ
         String xuatbarcode(uint16_t sotu);       
+        int xuat_sotu(String data);
         void QR_VNP(String QR); //Hiện QR VNP 
+        void HT_QR(String QR);
 
         String loadChipID();
         int get_temp(); //đọc nhiệt độ ESP32
@@ -423,6 +428,7 @@ namespace VHITEK
             caidattongsotu,
             tuchuasudung,
             doithemaster,
+            doimkmotu,
             menuXemIDthe,
             setbillminmax,
             setpayout,
@@ -460,6 +466,7 @@ namespace VHITEK
         void TB_ADD_khac_0(); //TB địa chỉ nhập vào phải lớn hơn 0
         void TB_dang_KT_cai_dat();
         void TB_Server_Disconnect(); //TB mất kết nối Server
+        void Trang_thanh_toan(String VNPAY, cabine_transac NewTrans);
     }
 
     namespace Keypad

@@ -1024,6 +1024,144 @@ namespace VHITEK
                 }              
             }   
         }
+        void Doi_MK_MoTu() //Đổi mật khẩu Mas mở tủ
+        {
+            char key = Keypad::getKey();
+            static char keydata[6];    
+            static uint8_t keyCount = 0;
+            static uint8_t step=0;
+            static uint32_t New_PW=0;
+
+            if(step == 0) //Nhập Pass
+            {
+                u8g2.clearBuffer();
+                u8g2.drawFrame(0, 0, 128, 64);
+                u8g2.enableUTF8Print();
+                u8g2.setFontDirection(0);
+                u8g2.setFont(u8g2_font_resoledbold_tr);            
+                u8g2.setCursor(15,20);
+                u8g2.printf("NHAP LAI PASSWORD");
+                #ifdef logoVHITEK
+                u8g2.setCursor(35, 60);
+                u8g2.printf(logoVHITEK);  
+                #else
+                u8g2.setCursor(32, 60);    
+                u8g2.printf(logoTSE); 
+                #endif          
+
+                u8g2.setCursor(30,40);
+                u8g2.printf("%c %c %c %c %c %c",
+                            (keydata[0]) ? '*' : '_',
+                            (keydata[1]) ? '*' : '_',
+                            (keydata[2]) ? '*' : '_',
+                            (keydata[3]) ? '*' : '_',
+                            (keydata[4]) ? '*' : '_',
+                            (keydata[5]) ? '*' : '_');
+                u8g2.sendBuffer();
+
+                if(keyCount>=6)
+                {
+                    if((VHITEK::Config::so_sanh_mk_menu(keydata) == 1) or (VHITEK::Config::so_sanh_mk_menu(keydata) == 2))
+                    {
+                        step=1;
+                    }
+                    else 
+                    {
+                        VHITEK::Keypad::clearKeypad(keydata, 6);
+                        keyCount = 0;step=0;New_PW=0;
+                        reInit = true;
+                        step=0;
+                        u8g2.clearBuffer();
+                        u8g2.setCursor(25,35);
+                        u8g2.printf("SAI PASSWORD!");
+                        u8g2.sendBuffer();   
+                        delay(2000);  
+                        gotoMenu(menuMainId);                   
+                    }
+                }
+            }
+            else if(step==1)
+            {
+                u8g2.clearBuffer();
+                u8g2.drawFrame(0, 0, 128, 64);
+                u8g2.enableUTF8Print();
+                u8g2.setFontDirection(0);
+                u8g2.setFont(u8g2_font_resoledbold_tr);            
+                u8g2.setCursor(30,10);
+                u8g2.printf("DOI PASSWORD");
+                u8g2.setCursor(28,20);
+                u8g2.printf("DIEU KHIEN TU");       
+                u8g2.setCursor(5,40);
+                u8g2.printf("MK Cu: %d", save_config_machine.PW_Control);  
+
+                u8g2.setCursor(5,60);
+                u8g2.printf("MK Moi: %c%c%c%c%c%c",
+                            (keydata[0]) ? '*' : '_',
+                            (keydata[1]) ? '*' : '_',
+                            (keydata[2]) ? '*' : '_',
+                            (keydata[3]) ? '*' : '_',
+                            (keydata[4]) ? '*' : '_',
+                            (keydata[5]) ? '*' : '_');
+                u8g2.sendBuffer();
+
+                New_PW = atoi(keydata);
+            }
+            else if(step==2)
+            {
+                if(New_PW == 0)
+                {
+                    VHITEK::Display::TB_tu_lon_hon_0();
+                    VHITEK::Keypad::clearKeypad(keydata, 6);
+                    keyCount = 0;
+                    gotoMenu(menuMainId);
+                    delay(3000); 
+                }
+                else 
+                {
+                    save_config_machine.PW_Control = New_PW;
+
+                    u8g2.clearBuffer();    
+                    u8g2.setCursor(35,25);
+                    u8g2.printf("DANG LUU...");  
+                    u8g2.setCursor(30,40);
+                    u8g2.printf("VUI LONG CHO");    
+                    u8g2.sendBuffer(); 
+
+                    if(VHITEK::Config::Save_Set_Machine()==true)
+                    {
+                        VHITEK::Keypad::clearKeypad(keydata, 6);
+                        keyCount = 0;step=0;New_PW=0;
+                        gotoMenu(menuMainId);
+                        delay(3000);
+                    }
+                }
+            }
+
+            if(key)   
+            {
+                if(key == '#') //nhan cancel
+                {
+                    keyCount = 0;step=0;New_PW=0;
+                    VHITEK::Keypad::clearKeypad(keydata, 6);
+                    gotoMenu(menuMainId);
+                    return;
+                }
+                else if(key == '*') //nhan enter 
+                {
+                    step++;
+                }
+
+                if (keyCount < 6)
+                {
+                    keydata[keyCount] = key;
+                    keyCount++;
+                }   
+                else {
+                    VHITEK::Keypad::clearKeypad(keydata, 6);
+                    keyCount = 0;
+                }              
+            } 
+        }
         void menu_xem_id_the()
         {
             char key = Keypad::getKey();
@@ -1362,11 +1500,13 @@ namespace VHITEK
             }
             u8g2.setColorIndex(1);
             u8g2.setFont(u8g2_font_profont10_mf); // Courier New Bold 10,12,14,18,24
-            u8g2.setCursor(67,10);
-            u8g2.printf("MACHINE INFO"); 
-            u8g2.setCursor(65,25);
+            u8g2.setCursor(65,10);
+            u8g2.printf("TYPE:"); 
+            u8g2.setCursor(65,20);
+            u8g2.printf(BOARD_TYPE); 
+            u8g2.setCursor(65,30);
             u8g2.printf("Firmware:"); 
-            u8g2.setCursor(80,35);
+            u8g2.setCursor(65,40);
             u8g2.print(FW_VERSION);            
             u8g2.setCursor(65,50);
             u8g2.printf("SSID:");                                     
@@ -1386,14 +1526,10 @@ namespace VHITEK
         void gia_thue_tu() //Xem cài đặt giá
         {
             char key = Keypad::getKey();
-            static bill_price_setup pricesetup;
             static int step=0;
 
             if(step==0)
             {
-                accessI2C1Bus([&]{
-                    EEPROM::myMem.get(40, pricesetup);       
-                }, 100);
                 step=1;
             }
             else 
@@ -1403,13 +1539,13 @@ namespace VHITEK
                 u8g2.setCursor(30,15);
                 u8g2.printf("GIA THUE TU");
                 u8g2.setCursor(5,30);
-                u8g2.printf("GIA 1: %d", pricesetup.block1_price);
+                u8g2.printf("GIA 1: %d", save_config_machine.Gia_Thue_Tu.block1_price);
                 u8g2.setCursor(5,40);
-                u8g2.printf("THOI GIAN 1: %d", pricesetup.block1_minutes);
+                u8g2.printf("THOI GIAN 1: %d", save_config_machine.Gia_Thue_Tu.block1_minutes);
                 u8g2.setCursor(5,50);
-                u8g2.printf("GIA 2: %d", pricesetup.block2_price);
+                u8g2.printf("GIA 2: %d", save_config_machine.Gia_Thue_Tu.block2_price);
                 u8g2.setCursor(5,60);
-                u8g2.printf("THOI GIAN 2: %d", pricesetup.block2_minutes);
+                u8g2.printf("THOI GIAN 2: %d", save_config_machine.Gia_Thue_Tu.block2_minutes);
                 u8g2.sendBuffer();
             }
 
@@ -1961,13 +2097,15 @@ namespace VHITEK
                 {
                     save_config_machine.Sub_boar.tongboard = tongsotu/24;
                     save_config_machine.tongtu = tongsotu;
+                    
+                    // Serial.printf("Tổng tủ: %d\n", save_config_machine.tongtu);
+                    if(VHITEK::Config::Save_Set_Machine()==true) step = 2;
                     VHITEK::Config::KT_tong_tu_chua_SD();
-                    VHITEK::Config::Save_Set_Machine();
-                    step = 2;
                 }              
             }
             else if(step == 2)
             {
+                check_send_tong_so_tu = true;
                 reInit = true;
                 u8g2.clearBuffer();
                 u8g2.setCursor(30,30);
@@ -2512,7 +2650,7 @@ namespace VHITEK
                 u8g2.setCursor(25,25);
                 u8g2.printf("TEST MODULE QR");     
                 u8g2.setCursor(5,50);
-                u8g2.printf("Code: %s", QRread.data);                                                            
+                u8g2.printf("Code: %lls", QRread.data);                                                            
                 u8g2.sendBuffer(); 
             }
 
@@ -2630,6 +2768,7 @@ namespace VHITEK
 
             add_menu("Them tu moi", menuThemtu, 1, menu_them_tu);
             add_menu("Doi the MASTER", doithemaster, 1, Doi_the_Master);
+            add_menu("Doi MK mo tu", doimkmotu, 1, Doi_MK_MoTu);
             add_menu("Xem ID the", menuXemIDthe, 1, menu_xem_id_the);
 
             //Menu cua ky thuat
@@ -2639,13 +2778,10 @@ namespace VHITEK
             add_menu("KT IC nho", kt_bonho, 2, KT_bo_nho);
 
             add_menu("D/C Board IO", add_BoardIO, 2, ADD_Board_IO);
-            
             add_menu("D/C mach QR", addQR, 2, ADD_QR);
             add_menu("Test QR", kt_QR, 2, Test_QR);
-
             add_menu("D/C may in", addprint, 2, ADD_Printer);
             add_menu("Test may in", kt_print, 2, Test_Print);
-
             add_menu("D/C mach MUSIC", addmusic, 2, ADD_Music);
             add_menu("Test music", kt_music, 2, Test_Music);
 
