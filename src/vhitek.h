@@ -47,62 +47,59 @@ uint8_t temprature_sens_read();
 
 //////////////CHỌN CHỨC NĂNG//////////////////
 
-// #define serverchinh
-#ifdef serverchinh
-#define API ".............."
-#else 
-#define API "159.223.48.4"
-#endif
+    // #define serverchinh
+    #ifdef serverchinh
+    #define API ".............."
+    #else 
+    #define API "159.223.48.4"
+    #endif
 
-// #define mocua //Mở cửa cuốn của CTY
-#ifdef mocua
-#define Use_RFID
-#endif
+    // #define mocua //Mở cửa cuốn của CTY
+    #ifdef mocua
+    #define Use_RFID
+    #endif
 
-// #define Locker_NoiBo //Locker Nội bộ, dùng RFID
-#ifdef Locker_NoiBo
-#define Use_RFID
-#endif
+    // #define Locker_NoiBo //Locker Nội bộ, dùng RFID
+    #ifdef Locker_NoiBo
+    #define Use_RFID
+    #endif
 
-// #define Locker_Shipping //Locker gửi/nhận hàng, dùng bill, VNP, có music
-#ifdef Locker_Shipping
-#define bill
-#define Use_Music
-#endif
+    // #define Locker_Shipping //Locker gửi/nhận hàng, dùng bill, VNP, có music
+    #ifdef Locker_Shipping
+    #define Use_bill
+    #define Use_Music
+    #endif
 
-#define Locker_Ship_Barcode //Locker gửi/nhận hàng dùng 1 nút nhấn, bill, đầu đọc QR + máy in nhiệt
-#ifdef Locker_Ship_Barcode
-#define Use_QR
-#define Use_Printer
-#define Use_Music
-#endif
+    #define Locker_Ship_Barcode //Locker gửi/nhận hàng dùng 1 nút nhấn, bill, đầu đọc QR + máy in nhiệt
+    #ifdef Locker_Ship_Barcode
+    #define Use_QR
+    #define Use_Printer
+    #define Use_Music
+    // #define Use_bill
+    #endif
+
+    // #define CoSanTien //Có săn tiền không cần bill
 
 //////////// CHỌN LOGO /////////////////////
-#define logoTSE "TSEVENDING"
-#ifndef logoTSE
-#define logoVHITEK "VHITEK.VN"
-#endif
+    #define logoTSE "TSEVENDING"
+    #ifndef logoTSE
+    #define logoVHITEK "VHITEK.VN"
+    #endif
 
 //////////// CẬP NHẬT PHIÊN BẢN /////////////
-#ifdef Locker_NoiBo
-    #define BOARD_TYPE  "VLOCKER-V1"
-    #define FW_VERSION  "LK0.0.1"
-    #define FW_server 1
-#endif
+    #ifdef Locker_NoiBo
+        #define BOARD_TYPE  "VLOCKER-V1"
+        #define FW_VERSION  "LK0.0.1"
+        #define FW_server 1
+    #endif
 
-#ifdef Locker_Shipping
-    #define BOARD_TYPE  "VLOCKER-SHIPPING"
-    #define FW_VERSION  "LKS0.0.1"
-    #define FW_server 1
-#endif
+    #if defined(Locker_Shipping) || defined(Locker_Ship_Barcode)
+        #define BOARD_TYPE  "VLOCKER-SHIPPING"
+        #define FW_VERSION  "LKS0.0.1"
+        #define FW_server 1
+    #endif
 
-#ifdef Locker_Ship_Barcode
-    #define BOARD_TYPE  "VLOCKER-SHIPPING"
-    #define FW_VERSION  "LKS0.0.1"
-    #define FW_server 1
-#endif
-
-/////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #define MK_khach 123456 //Setup MK cho khach
 #define MK_KT 456789    //Setup MK cho ky thuat vien
@@ -117,10 +114,6 @@ uint8_t temprature_sens_read();
 #define PIN_VAL1 27
 #define PIN_VAL2 14
 #else
-// #define PIN_595_DATA 12
-// #define PIN_595_CLOCK 14
-// #define PIN_595_LATCH 27
-// #define PIN_165_LATCH 32
 #define PIN_ENC1 33
 #endif
 
@@ -260,7 +253,7 @@ namespace VHITEK
         uint16_t check_sum;
     } cabine_config;
 
-    typedef struct //IC2: Transaction
+    typedef struct //IC2: Transaction; Kích thước: 132 Byte
     {
         uint32_t IDX;
         uint32_t money; 
@@ -348,15 +341,17 @@ namespace VHITEK
 
     namespace ACTION
     {
-        extern int start_rece;
+        extern int CheckSend_Data;
+        extern int start_funct;
         void Locker_NB_RFID();  // Locker nội bội dùng RFID
         void mo_cua_cuon();
         void Locker_Ship_BARCODE();
+        void Send_His(cabine_transac data);
     }
 
     namespace transaction
     {
-        void save_trans(uint16_t so_tu, uint8_t cabine_status); //lưu trans
+        bool save_trans(uint16_t so_tu, uint8_t cabine_status); //lưu trans
         void load_du_lieu();
     }
 
@@ -378,7 +373,7 @@ namespace VHITEK
         void Send_Printer(uint16_t add, uint16_t sotu, String data);
         void Send_Music(uint16_t add, uint16_t sobaihat, uint16_t timeout);
 
-        String Json_his(cabine_transac data); //lich su giao dich
+        String Json_His_Shipping(cabine_transac data); //lich su giao dich
         String Json_tong_tu(); //Tao Json tong so tu
         // String Json_thong_tin_tu(user_setting user); //Tao Json thong tin tu
         String Json_machine_status(); //Tao Json tinh trang may

@@ -4,7 +4,7 @@ namespace VHITEK
 {
     namespace transaction
     {       
-        void save_trans(uint16_t so_tu, uint8_t cabine_status) //lưu trans
+        bool save_trans(uint16_t so_tu, uint8_t cabine_status) //lưu trans
         {
             cabine_transac giao_dich; 
             cabine_config user_read = VHITEK::EEPROM::read_EEP_1_Cabine(so_tu);
@@ -37,14 +37,17 @@ namespace VHITEK
                 VHITEK::diachi_giaodich = dia_chi_IDX_hien_tai;
                 if(dia_chi_IDX_hien_tai >= 63000) dia_chi_IDX_hien_tai = 0;
                 else dia_chi_IDX_hien_tai += sizeof(cabine_transac);
+                
+                Serial.print("IDX hien tai: "); Serial.print(IDX_hien_tai);
+                Serial.print(" - Dia chi hien tai: "); Serial.println(dia_chi_IDX_hien_tai);    
+                
+                return true;
             }
             else  //KHONG GHI vao EEPROM DUOC
             {
                 // Serial.println("SAI........!");
-                ;;
-            }
-            // Serial.print("IDX hien tai: "); Serial.print(IDX_hien_tai);
-            // Serial.print(" - Dia chi hien tai: "); Serial.println(dia_chi_IDX_hien_tai);                    
+                return false;
+            }          
         }
 
         //ham viet de load du lieu tu EEPROM moi khi khoi dong lai ESP32
@@ -123,7 +126,7 @@ namespace VHITEK
                     {
                         IDX_hien_tai = last_IDX+1;
                         if(i>=63000) dia_chi_IDX_hien_tai = 0;
-                        else dia_chi_IDX_hien_tai = i+1;
+                        else dia_chi_IDX_hien_tai += sizeof(cabine_transac);;
                         // Serial.print(" - doc IDX OK: "); Serial.print(doc_idx);
                         // Serial.print(" - diachi OK: "); Serial.println(i);                       
                         break;
@@ -133,6 +136,7 @@ namespace VHITEK
                         // Serial.print(" - doc IDX: "); Serial.print(doc_idx);
                         // Serial.print(" - diachi: "); Serial.println(i);  
                         last_IDX = read_trans.IDX;
+                        dia_chi_IDX_hien_tai = i;
                     }
                 }
             }

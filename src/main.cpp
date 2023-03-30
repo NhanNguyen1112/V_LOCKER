@@ -117,6 +117,7 @@ namespace VHITEK
     return false;
   }
 
+  #if defined(Use_bill)
   void Bill(void *parameter)
   {
     while(1)
@@ -128,6 +129,7 @@ namespace VHITEK
       delay(200);
     }
   }
+  #endif
 
   void taskKeypad(void *parameter)
   {
@@ -254,7 +256,7 @@ namespace VHITEK
           // Serial.println(VHITEK::Config::Json_tong_tu().c_str());
 
           String payload = http.getString();     
-          // Serial.println(payload);  
+          Serial.print("Status Gửi Tổng Tủ: "); Serial.println(payload);  
 
           if (post == 200)
           {
@@ -279,7 +281,7 @@ namespace VHITEK
 
       if((WiFi.status() == WL_CONNECTED)) //Gui trang thai may
       {
-        if ( ((uint32_t)(millis() - lastTick_status_machine) > 30000) or check_update_machine == true ) //1s update 1 lan
+        if ( ((uint32_t)(millis() - lastTick_status_machine) > 60000) or check_update_machine == true ) //1p update 1 lan
         {
           char url[1024];
           HTTPClient http;
@@ -291,7 +293,7 @@ namespace VHITEK
 
           int post = http.POST(json_data.c_str());
           String payload = http.getString();
-          // Serial.println(payload);          
+          Serial.print("Status TTM: "); Serial.println(payload);          
 
           if (post == 200)  //Check for the returning code
           { 
@@ -320,43 +322,7 @@ namespace VHITEK
 
       if ((WiFi.status() == WL_CONNECTED))  //GUI lich su hanh dong mo cua len Server
       {
-        if(check_update_machine == true)
-        {
-          trans_read = VHITEK::EEPROM::read_eeprom_2(diachi_giaodich); //doc lich su giao dich da luu trong EEPROM 2
-          if(VHITEK::EEPROM::check_read_eeprom_2 == true) //Neu doc trong EEPROM ra OK
-          {
-            if(trans_read.send_data == 1) //CHUA gui
-            {
-              HTTPClient http;
-              http.begin("http://%s:8000/locker/sethistorytransactionlocker",API); //Specify the URL
-              http.addHeader("Content-Type", "application/json");              
-              String json_data=VHITEK::Config::Json_his(trans_read);
-              // Serial.println(VHITEK::Config::toJson(data).c_str());
-
-              int post = http.POST(json_data.c_str());
-              String payload = http.getString();
-              // Serial.println(payload);          
-              if (post == 200)  //Check for the returning code
-              { 
-                DeserializationError error = deserializeJson(doc, payload);
-                if (error == 0)
-                {
-                  // Serial.println(doc["status"].as<String>());
-                  if(doc["status"].as<boolean>() == true) //NEU da gui duoc
-                  {
-                    // Serial.println("Da gui duoc transaction");
-                    // trans_read.send_data = 0;
-                    // accessI2C1Bus([&]{
-                    //     myMem2.put(diachi+7, data.send_data_check); //cap nhat lai Data send check
-                    // }, 100);    
-                    // check_his_send = false;                
-                  }
-                }
-              }
-              http.end();     
-            }
-          }
-        }
+        ;;
       }
 
       if((WiFi.status() == WL_CONNECTED)) //Doc cai dat gia thue tu Server
@@ -434,14 +400,14 @@ namespace VHITEK
     digitalWrite(PIN_LEVEL_SHIFTER_ENABLE, HIGH); // Always: HIGH
 
     VHITEK::Config::begin();
-    VHITEK::BILL::begin();
-    VHITEK::transaction::load_du_lieu();
 
     // Start Keypad Task
     xTaskCreateUniversal(taskKeypad, "taskKeypad", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
     xTaskCreateUniversal(mainTask, "mainTask", 10000, NULL, 2, NULL, CONFIG_ARDUINO_RUNNING_CORE);
     xTaskCreateUniversal(_Synch_Task, "Task_synch", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
+    #if defined(Use_bill)
     xTaskCreateUniversal(Bill, "Task_bill", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
+    #endif
 
     // Serial.println(sizeof(save_config_machine));
     // Serial.println(sizeof(save_cabine));
@@ -485,10 +451,11 @@ void loop()
       {
         int addMas = doc["addMas"].as<int>();
         int add = doc["add"].as<int>();
+        String state;
 
-        // Serial.println("READ PORT: ");
-        // serializeJson(doc, Serial);
-        // Serial.println();
+        Serial.print("READ PORT: ");
+        serializeJson(doc, Serial);
+        Serial.println();
 
         if(addMas == 1)
         {
@@ -497,7 +464,7 @@ void loop()
             VHITEK::QRread.add = add;
             VHITEK::QRread.data = doc["data"].as<String>().c_str();
             VHITEK::QRread.check_sum = doc["crc"].as<uint16_t>();
-            VHITEK::ACTION::start_rece = 1;
+            VHITEK::ACTION::start_funct = 2;
           }
           else if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_Music) //Music
           {
@@ -505,7 +472,10 @@ void loop()
           }
           else if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_Printer) //printer
           {
-
+            // Serial.println(doc["state"].as<String>().c_str());
+            state = doc["state"].as<String>().c_str();
+            if(state == "OK") VHITEK::ACTION::CheckSend_Data = 1;
+            else if(state == "NOPAPER") VHITEK::ACTION::CheckSend_Data = 2;
           }
           else //Các board IO
           {

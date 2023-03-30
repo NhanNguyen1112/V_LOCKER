@@ -11,8 +11,10 @@
 2. Module máy in nhiệt:
 
     - master: {"add":"3","cmd":"printer","id":"2","barcode":"1235456789"}
-    - Slave: {"addMas":"1", "add":"3","state":"ok"}
-            {"addMas":"1", "add":"3","state":"timeout"}
+                {"add":"3","cmd":"printer","id":"2","barcode":"CHECK"}
+
+    - Slave: {"addMas":"1", "add":"3","state":"OK"}
+            {"addMas":"1", "add":"3","state":"NOPAPER"}
 
 3. Module Music:
 

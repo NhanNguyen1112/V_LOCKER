@@ -61,25 +61,6 @@ namespace VHITEK
             serializeJson(doc, Serial2);
             Serial2.write(0x7E);
         }
-        String Json_info_shipper(cabine_config data) // Tao Json luu info shipper
-        {
-            DynamicJsonDocument doc(10000);
-            char rData[2048];
-            char Time_send[25];
-
-            sprintf(Time_send, "%04d-%02d-%02dT%02d:%02d:00.671Z",
-                    data.time_sender.nam, data.time_sender.thang, data.time_sender.ngay, data.time_sender.gio, data.time_sender.phut);
-
-            doc["lockerid"] = data.sotu;
-            doc["time"] = Time_send;
-            doc["size"] = 0;
-            doc["phonesender"] = 0;
-            doc["phonereceiver"] = 0;
-            doc["lockermachineid"] = apSSID;
-
-            serializeJson(doc, rData);
-            return String(rData);
-        }
 
         bool read_locker(uint16_t sotu) //Đọc trạng thái tủ
         {
@@ -137,25 +118,29 @@ namespace VHITEK
             }
         }
 
-        String Json_his(cabine_transac data) //lich su giao dich
+        String Json_His_Shipping(cabine_transac data) //lich su giao dich
         {
             DynamicJsonDocument doc(10000);
-            thoigian time;
             char rData[2048];
-            char dateBuf[25];
+            char Time_send[25];
+            char Time_rece[25];
 
-            time = thoi_gian;
-
-            sprintf(dateBuf, "%04d-%02d-%02dT%02d:%02d:00.546715",
-                    time.nam+2000, time.thang, time.ngay, time.gio, time.phut);
+            sprintf(Time_send, "%04d-%02d-%02dT%02d:%02d:00.148Z",
+                    data.time_sender.nam, data.time_sender.thang, data.time_sender.ngay, data.time_sender.gio, data.time_sender.phut);
+            sprintf(Time_rece, "%04d-%02d-%02dT%02d:%02d:00.148Z",
+                    data.time_receive.nam, data.time_receive.thang, data.time_receive.ngay, data.time_receive.gio, data.time_receive.phut);
 
             doc["IDX"] = data.IDX;
-            doc["Status"] = data.status_cabine;
             doc["lockerid"] = data.so_tu;
-            doc["DataCheck"] = data.send_data;
-            doc["IdCard"] = data.RFID;
-            doc["Time"] = dateBuf;
+            doc["sizecabined"] = 1;
+            doc["money"] = data.money;
+            doc["typepayment"] = data.typepayment;
+            doc["phonesender"] = 0;
+            doc["phonereceiver"] = 0;
+            doc["timesend"] = Time_send;
+            doc["timereceive"] = Time_rece;
             doc["MID"] = apSSID;
+
             serializeJson(doc, rData);
             return String(rData);
         }
@@ -192,9 +177,8 @@ namespace VHITEK
 
             char dateBuf[25];
             char rData[2048];
-            sprintf(dateBuf, "%04d-%02d-%02dT%02d:%02d:%02d.265Z",
-                    thoi_gian.nam, thoi_gian.thang, thoi_gian.ngay,
-                    thoi_gian.gio, thoi_gian.phut, thoi_gian.giay);
+            sprintf(dateBuf, "%04d-%02d-%02dT%02d:%02d:00.570Z",
+                    thoi_gian.nam, thoi_gian.thang, thoi_gian.ngay,thoi_gian.gio, thoi_gian.phut);
 
             doc["time"] = dateBuf;
             doc["wifi"] = Wifi_RSSI();
@@ -381,7 +365,7 @@ namespace VHITEK
             Tong_tu_chua_SD = 0;
             int vitri=0;
 
-            // Serial.printf("Tu SD: ");
+            Serial.printf("Tu SD: ");
             for(int sotu=1; sotu<=save_config_machine.tongtu; sotu++) //dò từ 1 đến tổng số tủ
             {
                 add = VHITEK::Config::tinh_o_luu_the(sotu);
@@ -393,7 +377,7 @@ namespace VHITEK
                 if(readcabine.sotu==0)
                 {
                     tuchuasd[vitri] = sotu;
-                    // Serial.printf("%d ", tuchuasd[vitri]);
+                    Serial.printf("%d ", tuchuasd[vitri]);
                     Tong_tu_chua_SD++;
                     vitri++;
                 }
@@ -526,7 +510,7 @@ namespace VHITEK
             VHITEK::FOTA::FOTAbegin();
             loadChipID();
 
-            // VHITEK::Config::All_Clear_eeprom(1, 64000);
+            // VHITEK::Config::All_Clear_eeprom(2, 10000);
 
             get_setting_machine();
             if(save_config_machine.BILL.payout==0) save_config_machine.BILL.payout = 10000;
@@ -558,6 +542,12 @@ namespace VHITEK
             }
 
             KT_tong_tu_chua_SD();
+
+            #if defined(Use_bill)
+            VHITEK::BILL::begin();
+            #endif
+
+            VHITEK::transaction::load_du_lieu();
         }
     }
 }

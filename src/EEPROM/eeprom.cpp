@@ -239,12 +239,11 @@ namespace VHITEK
 
             if(Sum_cal == user_read_eeprom.check_sum) //Neu check SUM dung
             {
+                // Serial.printf("So tu: %d - SUM_cal: %d - SUM eeprom: %d\n", user_read_eeprom.sotu, Sum_cal, user_read_eeprom.check_sum);
                 check_read_eeprom_1_Cabine = true;
                 return user_read_eeprom;
             }
             else check_read_eeprom_1_Cabine = false;
-
-            Serial.printf("So tu: %d - SUM_cal: %d - SUM eeprom: %d\n", user_read_eeprom.sotu, Sum_cal, user_read_eeprom.check_sum);
         }
 
 //////////////////////// EEPROM 2 ////////////////////////////////
