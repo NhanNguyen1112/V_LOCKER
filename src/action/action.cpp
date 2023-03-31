@@ -46,18 +46,21 @@ namespace VHITEK
 
         int TIM_Tu_CSD() //Tìm xem tủ nào chưa sử dụng -> mở tủ
         {
-            Serial.printf("Tu CSD= \n");
-            for(int i=0; i<=save_config_machine.tongtu; i++)
+            // Serial.printf("Tu CSD= ");
+            if(Tong_tu_chua_SD > 0)
             {
-                if(tuchuasd[i]>0)
+                for(int i=0; i<=save_config_machine.tongtu; i++)
                 {
-                    Serial.printf(" %d ", tuchuasd[i]);
-                    //Mở cửa -> Nếu mở được thì break ra / Không mở được thì mở tủ tiếp theo
-                    return tuchuasd[i];
-                    break;
+                    if(tuchuasd[i]>0)
+                    {
+                        // Serial.printf(" %d ", tuchuasd[i]);
+                        //Mở cửa -> Nếu mở được thì break ra / Không mở được thì mở tủ tiếp theo
+                        return tuchuasd[i];
+                        break;
+                    }
                 }
             }
-            return 0;
+            else return 0;     
         }
 
 #ifdef mocua
@@ -563,7 +566,6 @@ namespace VHITEK
         }
 #endif
 
-
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef Locker_Ship_Barcode
 
@@ -654,7 +656,7 @@ namespace VHITEK
             }
         }
 
-        void Send_His(cabine_transac data)
+        void Send_His(cabine_transac data, uint32_t diachi)
         {
             if ((WiFi.status() == WL_CONNECTED))  //GUI lich su hanh dong mo cua len Server
             {
@@ -667,11 +669,11 @@ namespace VHITEK
                     http.begin(url); //Specify the URL
                     http.addHeader("Content-Type", "application/json");              
                     String json_data=VHITEK::Config::Json_His_Shipping(data);
-                    // Serial.println(VHITEK::Config::Json_transac(data).c_str());
+                    Serial.println(VHITEK::Config::Json_His_Shipping(data).c_str());
 
                     int post = http.POST(json_data.c_str());
                     String payload = http.getString();
-                    // Serial.print("Send Trans: "); Serial.println(payload);          
+                    Serial.print("Send Trans: "); Serial.println(payload);          
 
                     if (post == 200)  //Check for the returning code
                     { 
@@ -683,9 +685,9 @@ namespace VHITEK
                             {
                                 data.send_data = 0;
 
-                                if(VHITEK::EEPROM::write_eeprom_2(data)==true)
+                                if(VHITEK::EEPROM::write_eeprom_2(data, diachi)==true)
                                 {
-                                    // Serial.println("1. Da gui duoc transaction");
+                                    Serial.println("Da gui duoc transaction");
                                     // VHITEK::Config::xem_eep_TranSac(diachi_giaodich);
                                 }             
                             }
@@ -732,6 +734,22 @@ namespace VHITEK
             }
         } */
 
+        void clear_cabine(uint16_t sotu) //xóa tủ khi nhận hàng xong
+        {
+            cabine_config clear;
+            memset(&clear, 0, sizeof(cabine_config));
+
+            uint16_t o_luu= VHITEK::Config::tinh_o_luu_the(sotu);
+
+            if(VHITEK::Config::kiem_tra_tu_da_co(sotu) == 1)
+            {
+                accessI2C1Bus([&]{
+                    EEPROM::myMem.put(o_luu, clear);   
+                }, 100);
+                VHITEK::Config::KT_tong_tu_chua_SD();
+            }
+        }
+
         void back()
         {
             auto clearBILL = [&](){
@@ -755,15 +773,12 @@ namespace VHITEK
             }
 
             if(step==0) //Tìm tủ chưa sử dụng
-            {                
-                u8g2.clearBuffer();
-                u8g2.drawXBM(0, 0, 128, 64, DangTaoGiaoDich_bits);
-                u8g2.sendBuffer();
-                delay(1000);
-
+            {                               
                 if(CheckSend_Data == 0) //Kiểm tra máy in còn giấy không
                 {
                     VHITEK::Config::Send_Printer(save_config_machine.Sub_boar.Add_Module_Printer, sender.sotu, "CHECK");
+                    Display::dang_tao_GD();
+                    delay(3000);
                 }
                 else if(CheckSend_Data == 2) //Hết giấy
                 {
@@ -781,14 +796,11 @@ namespace VHITEK
                 else //Còn giấy
                 {
                     // Serial.printf("Máy in còn giấy\n");
+                    // Serial.printf("\n %d \n", TIM_Tu_CSD());
+
                     if(TIM_Tu_CSD()==0)
                     {
-                        u8g2.clearBuffer();
-                        u8g2.drawFrame(0, 0, 128, 64);
-                        u8g2.setFont(u8g2_font_resoledbold_tr);
-                        u8g2.setCursor(40, 35);
-                        u8g2.printf("HET TU...!");
-                        u8g2.sendBuffer();
+                        Display::Khong_con_tu_trong();
                         delay(3000);
                         back();
                     }
@@ -823,18 +835,9 @@ namespace VHITEK
             }
             else if(step==2) //Mở cửa
             {
-                u8g2.clearBuffer();
-                u8g2.drawXBM(0, 0, 128, 64, DaMoTu_bits);
-                u8g2.setFont(u8g2_font_timB24_tf);
-                u8g2.setCursor(45, 50);
-                u8g2.printf("%02d", sender.sotu);
-                u8g2.sendBuffer();
-                delay(2000);
-                u8g2.clearBuffer(); 
-                u8g2.drawXBM(0, 0, 128, 64, DeHangVaoDongCua_bits);
-                u8g2.sendBuffer();
-                delay(2000);
-
+                Display::mo_cua(sender.sotu);
+                delay(3000);
+                Display::de_hang_vao();
                 step=3;
             }
             else if(step==3) //Lưu thông tin Sender
@@ -878,6 +881,7 @@ namespace VHITEK
                     if(String(rece.barcode) == QRread.data)
                     {
                         // Serial.println("Đúng Barcode");
+                        new_trans.IDX = IDX_hien_tai;
                         new_trans.so_tu = rece.sotu;
                         new_trans.time_sender = rece.time_sender;
                         new_trans.time_receive = thoi_gian;
@@ -894,12 +898,6 @@ namespace VHITEK
                 static int stateVNP=0;
                 if(stateVNP==0) VNP_NewOrder(stateVNP);
                 else if(stateVNP==1) step=2;
-                // for(int i=0; i<=5; i++)
-                // {
-                //     VNP_NewOrder();
-                //     delay(10);
-                // }
-                // step=2;
             }
             else if(step==2) //Kiểm tra thanh toán bằng VNP hay tiền mặt
             {              
@@ -936,9 +934,7 @@ namespace VHITEK
                 {
                     accessMDBBus([&]
                             {         
-                                u8g2.clearBuffer();
-                                u8g2.drawXBM(0, 0, 128, 64, ThoiTien_bits);
-                                u8g2.sendBuffer();
+                                VHITEK::Display::TB_thoi_tien();
 
                                 // Serial.printf("Dang thoi tien\n");
                                 status = Validator.BV->payoutValue(tienthoi, &soTienDaTraLai);
@@ -989,7 +985,8 @@ namespace VHITEK
 
                 if(VHITEK::transaction::save_trans(new_trans.so_tu, 1) == true)
                 {
-                  Send_His(new_trans);
+                  Send_His(new_trans, Last_DC_GD);
+                  clear_cabine(new_trans.so_tu);
                   back();
                 } 
             }

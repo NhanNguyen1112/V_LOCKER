@@ -75,7 +75,7 @@ uint8_t temprature_sens_read();
     #define Use_QR
     #define Use_Printer
     #define Use_Music
-    // #define Use_bill
+    #define Use_bill
     #endif
 
     // #define CoSanTien //Có săn tiền không cần bill
@@ -298,7 +298,7 @@ namespace VHITEK
     extern bool check_update_machine;
     // extern bool check_his_send;
     extern int server_check_connect;
-    extern uint16_t diachi_giaodich;
+    extern uint16_t Last_DC_GD;
 
     unsigned short cal_crc_loop_CCITT_A(short l, unsigned char *p);
     bool accessI2C1Bus(std::function<void()> &&Callback, uint32_t timeout);
@@ -335,7 +335,7 @@ namespace VHITEK
         cabine_config read_EEP_1_Cabine(uint16_t so_tu); //Đọc config tủ
 
         int16_t sumCalc_eeprom_2(cabine_transac data);
-        bool write_eeprom_2(cabine_transac giaodich);
+        bool write_eeprom_2(cabine_transac giaodich, uint32_t diachi);
         cabine_transac read_eeprom_2(uint16_t dia_chi);
     }
 
@@ -346,7 +346,7 @@ namespace VHITEK
         void Locker_NB_RFID();  // Locker nội bội dùng RFID
         void mo_cua_cuon();
         void Locker_Ship_BARCODE();
-        void Send_His(cabine_transac data);
+        void Send_His(cabine_transac data, uint32_t diachi);
     }
 
     namespace transaction
@@ -462,6 +462,11 @@ namespace VHITEK
         void TB_dang_KT_cai_dat();
         void TB_Server_Disconnect(); //TB mất kết nối Server
         void Trang_thanh_toan(String VNPAY, cabine_transac NewTrans);
+        void de_hang_vao(); //Để hàng vào và đóng cửa
+        void Khong_con_tu_trong(); //Không còn tủ trống
+        void dang_tao_GD(); //Đang tạo giao dịch
+        void mo_cua(uint16_t sotu); //Mở cửa
+        void TB_thoi_tien(); //TB thối tiền
     }
 
     namespace Keypad

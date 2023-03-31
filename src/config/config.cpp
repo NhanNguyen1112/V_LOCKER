@@ -190,7 +190,7 @@ namespace VHITEK
             doc["version"] = FW_VERSION;
 
             int total_elm=0;
-            for (int i=1;i<=save_config_machine.tongtu;i++)
+            for (int i=0;i<=save_config_machine.tongtu;i++)
             {
                 doc["statuscabined"][total_elm++]=1;
                 // if(VHITEK::Config::read_locker(i)==1) //đang mở
@@ -365,7 +365,7 @@ namespace VHITEK
             Tong_tu_chua_SD = 0;
             int vitri=0;
 
-            Serial.printf("Tu SD: ");
+            Serial.printf("Tu CSD: ");
             for(int sotu=1; sotu<=save_config_machine.tongtu; sotu++) //dò từ 1 đến tổng số tủ
             {
                 add = VHITEK::Config::tinh_o_luu_the(sotu);
@@ -382,7 +382,7 @@ namespace VHITEK
                     vitri++;
                 }
             }
-            // Serial.printf("Tong tu chua sd: %d \n", Tong_tu_chua_SD);
+            Serial.printf("Tong tu chua sd: %d \n", Tong_tu_chua_SD);
         }
 
         void get_setting_machine() //đọc cài đặt máy
@@ -510,7 +510,7 @@ namespace VHITEK
             VHITEK::FOTA::FOTAbegin();
             loadChipID();
 
-            // VHITEK::Config::All_Clear_eeprom(2, 10000);
+            // VHITEK::Config::All_Clear_eeprom(2, 64000);
 
             get_setting_machine();
             if(save_config_machine.BILL.payout==0) save_config_machine.BILL.payout = 10000;

@@ -266,17 +266,17 @@ namespace VHITEK
             uint16_t sum = cal_crc_loop_CCITT_A(dataSize, buffer);
             return sum;
         } 
-        bool write_eeprom_2(cabine_transac giaodich)
+        bool write_eeprom_2(cabine_transac giaodich, uint32_t diachi)
         {
             cabine_transac read_check_sum;
             byte check_dung=0;
 
             giaodich.check_sum = sumCalc_eeprom_2(giaodich); //tinh check sum cua cabine_transac
             accessI2C1Bus([&]{
-                    myMem2.put(dia_chi_IDX_hien_tai, giaodich); //luu vao eeprom             
+                    myMem2.put(diachi, giaodich); //luu vao eeprom             
             }, 100); 
             accessI2C1Bus([&]{ //Doc de lay ID cua tu 
-                    myMem2.get(dia_chi_IDX_hien_tai, read_check_sum);        
+                    myMem2.get(diachi, read_check_sum);        
             }, 100);                           
 
             for(int i=0; i<3; i++) //sao sanh 3 lan
@@ -303,10 +303,10 @@ namespace VHITEK
             {
                 giaodich.check_sum = sumCalc_eeprom_2(giaodich); //tinh check sum cua cabine_transac
                 accessI2C1Bus([&]{
-                        myMem2.put(dia_chi_IDX_hien_tai, giaodich); //luu vao eeprom             
+                        myMem2.put(diachi, giaodich); //luu vao eeprom             
                 }, 100); 
                 accessI2C1Bus([&]{ //Doc de lay ID cua tu 
-                        myMem2.get(dia_chi_IDX_hien_tai, read_check_sum);        
+                        myMem2.get(diachi, read_check_sum);        
                 }, 100);      
 
                 if(giaodich.check_sum == read_check_sum.check_sum) //neu dung
@@ -318,7 +318,7 @@ namespace VHITEK
                     // Serial.println(".........SAI...........");  
                     memset(&read_check_sum, 0, sizeof(read_check_sum));
                     accessI2C1Bus([&]{
-                            myMem2.put(dia_chi_IDX_hien_tai, read_check_sum); //luu vao eeprom              
+                            myMem2.put(diachi, read_check_sum); //luu vao eeprom              
                     }, 100);        
 
                     return false;               

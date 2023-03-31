@@ -46,7 +46,7 @@ namespace VHITEK
   bool check_update_machine;
   // bool check_his_send;
   int server_check_connect;
-  uint16_t diachi_giaodich;
+  uint16_t Last_DC_GD;
 
   unsigned short cal_crc_loop_CCITT_A(short l, unsigned char *p)
   {
@@ -168,7 +168,8 @@ namespace VHITEK
       #endif
       
       #ifdef Locker_Ship_Barcode
-      VHITEK::ACTION::Locker_Ship_BARCODE();
+      VHITEK::ACTION::Locker_Ship_BARCODE(); 
+      
       #endif
     } 
   }
@@ -216,6 +217,7 @@ namespace VHITEK
     uint32_t lastTick_wifi=0;
     uint32_t lastTick_status_machine=0;
     uint32_t lastTick_Cal_Money=0;
+    uint32_t diachi=0;
 
     while(1)
     {
@@ -320,9 +322,21 @@ namespace VHITEK
         }
       }
 
-      if ((WiFi.status() == WL_CONNECTED))  //GUI lich su hanh dong mo cua len Server
+      if ((WiFi.status() == WL_CONNECTED))  //GUI lich su giao dich
       {
-        ;;
+        if(diachi <= 64000)
+        {
+          trans_read = VHITEK::EEPROM::read_eeprom_2(diachi);
+          if(EEPROM::check_read_eeprom_2 == true)
+          {
+            if(trans_read.send_data == 1) //Chưa gửi lên Server
+            {
+              VHITEK::ACTION::Send_His(trans_read, diachi);
+            }
+          }
+          diachi+=sizeof(cabine_transac);
+        }
+        else diachi=0;
       }
 
       if((WiFi.status() == WL_CONNECTED)) //Doc cai dat gia thue tu Server

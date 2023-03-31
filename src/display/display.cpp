@@ -141,6 +141,96 @@ namespace VHITEK
             u8g2.printf("NHAN:%ld", VHITEK::BILL::soTienDaNhan);
             u8g2.sendBuffer();
         }
+        void Khong_con_tu_trong() //Không còn tủ trống
+        {
+            static uint64_t lastTick=0;
+            static bool page=0;
+
+            if((uint32_t)(millis() - lastTick) > 2000)
+            {
+                page = !page;
+                lastTick = millis();
+            } 
+            
+            if(page==0)
+            {
+                u8g2.clearBuffer();   
+                u8g2.drawFrame(0, 0, 128, 64);
+                u8g2.setFont(u8g2_font_unifont_t_vietnamese2);
+                u8g2.drawUTF8(30, 28, "KHÔNG CÒN");
+                u8g2.drawUTF8(30, 50, "TỦ TRỐNG");
+                u8g2.sendBuffer(); 
+            }
+            else 
+            {
+                u8g2.clearBuffer();   
+                u8g2.drawFrame(0, 0, 128, 64);
+                u8g2.setFont(u8g2_font_ncenB10_tr);
+                u8g2.setCursor(25, 20);    
+                u8g2.printf("NO MORE");
+                u8g2.setCursor(35, 40);    
+                u8g2.printf("EMPTY");
+                u8g2.setCursor(22, 60);    
+                u8g2.printf("CABINETS");
+                u8g2.sendBuffer();   
+            }
+        }
+        void de_hang_vao() //Để hàng vào và đóng cửa
+        {
+            u8g2.clearBuffer(); 
+            u8g2.drawXBM(0, 0, 128, 64, DeHangVaoDongCua_bits);
+            u8g2.sendBuffer();
+            delay(5000);
+
+            u8g2.clearBuffer();   
+            u8g2.drawFrame(0, 0, 128, 64);
+            u8g2.setFont(u8g2_font_resoledbold_tr);
+            u8g2.setCursor(30, 25);    
+            u8g2.printf("PLEASE LEAVE");
+            u8g2.setCursor(30, 40);    
+            u8g2.printf("THE PRODUCTS");
+            u8g2.setCursor(10, 55);    
+            u8g2.printf("IN INSIDE AND CLOSE");
+            u8g2.sendBuffer();
+            delay(5000);
+        }
+        void dang_tao_GD() //Đang tạo giao dịch
+        {
+            u8g2.clearBuffer();   
+            u8g2.drawFrame(0, 0, 128, 64);
+            u8g2.setFont(u8g2_font_unifont_t_vietnamese1);
+            u8g2.drawUTF8(33, 15, "ĐANG TẠO");
+            u8g2.drawUTF8(30, 30, "GIAO DỊCH");
+            u8g2.setFont(u8g2_font_resoledbold_tr);
+            u8g2.setCursor(5, 50);
+            u8g2.printf("CREATING");
+            u8g2.setCursor(5, 60);
+            u8g2.printf("A NEW TRANSACTION");
+            u8g2.sendBuffer();
+        }
+        void mo_cua(uint16_t sotu) //Mở cửa
+        {
+            u8g2.clearBuffer();
+            u8g2.drawFrame(0, 0, 128, 64);
+            u8g2.setFont(u8g2_font_unifont_t_vietnamese1);
+            u8g2.drawUTF8(25, 20, "MỞ TỦ/OPEN");
+            u8g2.setFont(u8g2_font_timB24_tf);
+            u8g2.setCursor(45, 55);
+            u8g2.printf("%02d", sotu);
+            u8g2.sendBuffer();
+        }
+        void TB_thoi_tien() //TB thối tiền
+        {
+            u8g2.clearBuffer();
+            u8g2.drawFrame(0, 0, 128, 64);
+            u8g2.setFont(u8g2_font_unifont_t_vietnamese2);
+            u8g2.drawUTF8(10, 30, "NHẬN TIỀN THỪA");
+            u8g2.setFont(u8g2_font_resoledbold_tr);
+            u8g2.setCursor(2, 50);
+            u8g2.printf("GET ROTTEN MONEY BACK");
+            u8g2.sendBuffer();
+        }
+
 
 #ifdef mocua
         void hien_ngay_gio() //Hien thi ngay, gio tai man hinh chinh
@@ -196,18 +286,38 @@ namespace VHITEK
             static uint64_t lastTick=0;
             static uint64_t lastTick_page=0;
             static bool check=0;
-            static bool check_page=0;
+            static int check_page=0;
 
             if((uint32_t)(millis() - lastTick) > 2000)
             {
                 check = !check;
                 lastTick = millis();
             }
-            if((uint32_t)(millis() - lastTick_page) > 5000)
+
+            if(check_page == 0)
             {
-                check_page = !check_page;
-                lastTick_page = millis();
-            }          
+                if((uint32_t)(millis() - lastTick_page) > 7000)
+                {
+                    check_page = 1;
+                    lastTick_page = millis();
+                }
+            }  
+            else if(check_page==1)
+            {
+                if((uint32_t)(millis() - lastTick_page) > 5000)
+                {
+                    check_page = 2;
+                    lastTick_page = millis();
+                }
+            }   
+            else if(check_page==2)
+            {
+                if((uint32_t)(millis() - lastTick_page) > 5000)
+                {
+                    check_page = 0;
+                    lastTick_page = millis();
+                }
+            }      
 
             if(check_page == 0) //Man hinh thoi gian
             {
@@ -247,11 +357,25 @@ namespace VHITEK
                 #endif                                                           
                 u8g2.sendBuffer();                
             }  
-            else  //Man hinh moi chon so tu
+            else if(check_page == 1)  //Pgae 1
             {
-                u8g2.clearBuffer();
-                u8g2.drawXBM(0, 0, 128, 64, xinchaomoichontu_bits);                       
+                u8g2.clearBuffer();   
+                u8g2.drawFrame(0, 0, 128, 64);
+                u8g2.setFont(u8g2_font_unifont_t_vietnamese1);
+                u8g2.drawUTF8(33, 28, "NHẤN NÚT");
+                u8g2.drawUTF8(20, 50, "ĐỂ GỬI HÀNG");
                 u8g2.sendBuffer();           
+            }
+            else if(check_page == 2)  //Pgae 2
+            {
+                u8g2.clearBuffer();   
+                u8g2.drawFrame(0, 0, 128, 64);
+                u8g2.setFont(u8g2_font_ncenB10_tr);
+                u8g2.setCursor(2, 30);    
+                u8g2.printf("PRESS BUTTON");
+                u8g2.setCursor(30, 50);    
+                u8g2.printf("TO SHIP");
+                u8g2.sendBuffer();   
             }
         }
 #endif

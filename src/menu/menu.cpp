@@ -1439,44 +1439,52 @@ namespace VHITEK
         
         void menu_xem_tu_chua_su_dung() //Hien thi cac tu chua su dung
         {
-            char key = Keypad::getKey();           
+            char key = Keypad::getKey();    
+            static int step=0;       
 
-            byte hang=20; 
-            byte cot=5;
+            int hang=20; 
+            int cot=5;
 
-            u8g2.clearBuffer();
-            u8g2.setCursor(20,10);
-            u8g2.printf("TU CHUA SU DUNG");
-            // Serial.print("So tu chua SD: ");
-            for(int i=0; i<=save_config_machine.tongtu; i++)
+            if(step==0)
             {
-                if(tuchuasd[i]!=0)
+                u8g2.clearBuffer();
+                u8g2.setCursor(20,10);
+                u8g2.printf("TU CHUA SU DUNG");
+                // Serial.print("So tu chua SD: ");
+                for(int i=0; i<=save_config_machine.tongtu; i++)
                 {
-                    u8g2.setCursor(cot,hang);
-                    u8g2.printf("%d,", tuchuasd[i]);                     
-                    if(cot > 90)   
+                    if(tuchuasd[i]!=0)
                     {
-                        hang+=10;
-                        cot=5;
-                    }
-                    else
-                    {
-                        if(i>=10&&i<100) cot+=16;
-                        if(i>=100) cot+=22;
-                        if (i<10&&i>0) cot+=12;
+                        // Serial.printf(" %d=%d, ",i,tuchuasd[i]);
+                        u8g2.setCursor(cot,hang);
+                        u8g2.printf("%d,", tuchuasd[i]);                     
+                        if(cot > 90)   
+                        {
+                            hang+=10;
+                            cot=5;
+                        }
+                        else
+                        {
+                            if(i>=10&&i<100) cot+=16;
+                            if(i>=100) cot+=22;
+                            if (i<10&&i>=0) cot+=12;
+                        }
                     }
                 }
+                u8g2.sendBuffer();
+                step=1;
             }
-            u8g2.sendBuffer();
-            // step=2;
-            
+            else if(step==1)
+            {
+
+            }
             // VHITEK::Config::KT_tong_tu_chua_SD();
             // Serial.println();
-
             if(key)   
             {
                 if(key == '#') //nhan cancel
                 {
+                    step=0;
                     gotoMenu(menuMainId);
                     return;
                 }                            
@@ -2674,6 +2682,7 @@ namespace VHITEK
             static char keydata[3];
             static uint8_t keyCount = 0; 
             static uint8_t step=0;
+            static String QR;
 
             if (reInit == true)
             {
@@ -2685,11 +2694,14 @@ namespace VHITEK
 
             if(step == 0)
             {
+                QR = QRread.data.c_str();
                 u8g2.clearBuffer(); 
                 u8g2.setCursor(25,25);
-                u8g2.printf("TEST MODULE QR");     
-                u8g2.setCursor(5,50);
-                u8g2.printf("Code: %lls", QRread.data);                                                            
+                u8g2.printf("TEST MODULE QR");    
+                u8g2.setCursor(3,50);
+                u8g2.print("Code: "); 
+                u8g2.setCursor(35,50);
+                u8g2.print(QR);                                                         
                 u8g2.sendBuffer(); 
             }
 

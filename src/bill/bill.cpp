@@ -67,13 +67,13 @@ namespace VHITEK
             int32_t timestamp_gui = VHITEK::Ds1307::ToTimeStamp(TimeGui);
             int32_t timestamp_nhan = VHITEK::Ds1307::ToTimeStamp(TimeNhan);
             int32_t Total_TimeStamp = timestamp_nhan - timestamp_gui;
-            Serial.printf("Tổng timestamp: %d\n", Total_TimeStamp);
+            // Serial.printf("Tổng timestamp: %d\n", Total_TimeStamp);
 
             int32_t total_minutes = Total_TimeStamp/60;
-            Serial.printf("Tổng Phút: %d\n", total_minutes);
+            // Serial.printf("Tổng Phút: %d\n", total_minutes);
 
             int32_t total_block2_minutes = total_minutes - block1minutes;
-            Serial.printf("Tổng Phút Block 2: %d\n", total_block2_minutes);
+            // Serial.printf("Tổng Phút Block 2: %d\n", total_block2_minutes);
 
             if(total_block2_minutes>0)
             {
@@ -84,7 +84,7 @@ namespace VHITEK
                 }
             }
             total_revenue = total_block2_revenue + block1price;
-            Serial.printf("Tổng tiền: %d\n", total_revenue);
+            // Serial.printf("Tổng tiền: %d\n", total_revenue);
             return total_revenue;
         }
 

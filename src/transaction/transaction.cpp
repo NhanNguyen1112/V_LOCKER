@@ -29,17 +29,16 @@ namespace VHITEK
             Serial.print(" | Gio: "); Serial.print(giao_dich.time_receive.gio);
             Serial.print(" - Phut: "); Serial.println(giao_dich.time_receive.phut); */
 
-            if(VHITEK::EEPROM::write_eeprom_2(giao_dich)==true) //Neu ghi duoc vao EEPROM
+            if(VHITEK::EEPROM::write_eeprom_2(giao_dich, dia_chi_IDX_hien_tai)==true) //Neu ghi duoc vao EEPROM
             {
                 // Serial.println("LƯU THÀNH CÔNG");
                 last_trans = giao_dich;
                 IDX_hien_tai += 1;
-                VHITEK::diachi_giaodich = dia_chi_IDX_hien_tai;
+                VHITEK::Last_DC_GD = dia_chi_IDX_hien_tai;
                 if(dia_chi_IDX_hien_tai >= 63000) dia_chi_IDX_hien_tai = 0;
                 else dia_chi_IDX_hien_tai += sizeof(cabine_transac);
                 
-                Serial.print("IDX hien tai: "); Serial.print(IDX_hien_tai);
-                Serial.print(" - Dia chi hien tai: "); Serial.println(dia_chi_IDX_hien_tai);    
+                // Serial.printf("IDX hien tai: %d - ĐC hiện tại: %d - Last ĐC: %d\n", IDX_hien_tai, dia_chi_IDX_hien_tai, Last_DC_GD);
                 
                 return true;
             }
@@ -122,16 +121,18 @@ namespace VHITEK
                 // Serial.printf("last idx: %d - readIDX: %d\n", last_IDX, read_trans.IDX);
                 if(read_trans.IDX>=0)
                 {
-                    if(last_IDX>read_trans.IDX) //5>3
-                    {
-                        IDX_hien_tai = last_IDX+1;
-                        if(i>=63000) dia_chi_IDX_hien_tai = 0;
-                        else dia_chi_IDX_hien_tai += sizeof(cabine_transac);;
-                        // Serial.print(" - doc IDX OK: "); Serial.print(doc_idx);
-                        // Serial.print(" - diachi OK: "); Serial.println(i);                       
-                        break;
-                    }
-                    else 
+                    // if(last_IDX>read_trans.IDX) //5>3
+                    // {
+                    //     IDX_hien_tai = last_IDX+1;
+                    //     if(i>=63000) dia_chi_IDX_hien_tai = 0;
+                    //     else dia_chi_IDX_hien_tai += sizeof(cabine_transac);
+                    //     // Serial.print(" - doc IDX OK: "); Serial.print(doc_idx);
+                    //     // Serial.print(" - diachi OK: "); Serial.println(i);                       
+                    //     break;
+                    // }
+                    // else 
+
+                    if(last_IDX<=read_trans.IDX)
                     {
                         // Serial.print(" - doc IDX: "); Serial.print(doc_idx);
                         // Serial.print(" - diachi: "); Serial.println(i);  
@@ -140,6 +141,10 @@ namespace VHITEK
                     }
                 }
             }
+            IDX_hien_tai = last_IDX+1;
+            if(dia_chi_IDX_hien_tai>=63000) dia_chi_IDX_hien_tai = 0;
+            else dia_chi_IDX_hien_tai += sizeof(cabine_transac);
+
             Serial.print("IDX: "); Serial.print(IDX_hien_tai);
             Serial.print(" - Dia chi: "); Serial.println(dia_chi_IDX_hien_tai);
         }
