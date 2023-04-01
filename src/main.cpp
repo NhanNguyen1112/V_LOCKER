@@ -169,7 +169,6 @@ namespace VHITEK
       
       #ifdef Locker_Ship_Barcode
       VHITEK::ACTION::Locker_Ship_BARCODE(); 
-      
       #endif
     } 
   }
@@ -417,7 +416,7 @@ namespace VHITEK
 
     // Start Keypad Task
     xTaskCreateUniversal(taskKeypad, "taskKeypad", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
-    xTaskCreateUniversal(mainTask, "mainTask", 10000, NULL, 2, NULL, CONFIG_ARDUINO_RUNNING_CORE);
+    xTaskCreateUniversal(mainTask, "mainTask", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
     xTaskCreateUniversal(_Synch_Task, "Task_synch", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
     #if defined(Use_bill)
     xTaskCreateUniversal(Bill, "Task_bill", 10000, NULL, 3, NULL, CONFIG_ARDUINO_RUNNING_CORE);
@@ -475,10 +474,13 @@ void loop()
         {
           if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_QR) //Module QR
           {
-            VHITEK::QRread.add = add;
-            VHITEK::QRread.data = doc["data"].as<String>().c_str();
-            VHITEK::QRread.check_sum = doc["crc"].as<uint16_t>();
-            VHITEK::ACTION::start_funct = 2;
+            if(VHITEK::ACTION::start_funct == 0)
+            {
+              VHITEK::QRread.add = add;
+              VHITEK::QRread.data = doc["data"].as<String>().c_str();
+              VHITEK::QRread.check_sum = doc["crc"].as<uint16_t>();
+              VHITEK::ACTION::start_funct = 2;
+            }
           }
           else if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_Music) //Music
           {

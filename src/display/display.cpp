@@ -123,7 +123,7 @@ namespace VHITEK
         }
         void Trang_thanh_toan(String VNPAY, cabine_transac NewTrans)
         {
-            VHITEK::Config::HT_QR(VNPAY);
+            VHITEK::Config::QR_VNP(VNPAY);
             u8g2.setFont(u8g2_font_profont10_mf); // Courier New Bold 10,12,14,18,24 
             u8g2.setCursor(70,10);
             u8g2.printf("QUET MA DE");
@@ -176,23 +176,18 @@ namespace VHITEK
             }
         }
         void de_hang_vao() //Để hàng vào và đóng cửa
-        {
-            u8g2.clearBuffer(); 
-            u8g2.drawXBM(0, 0, 128, 64, DeHangVaoDongCua_bits);
-            u8g2.sendBuffer();
-            delay(5000);
-
-            u8g2.clearBuffer();   
+        { //Put the product inside and closure
+            u8g2.clearBuffer();
             u8g2.drawFrame(0, 0, 128, 64);
+            u8g2.setFont(u8g2_font_unifont_t_vietnamese2);
+            u8g2.drawUTF8(20, 15, "ĐỂ HÀNG VÀO");
+            u8g2.drawUTF8(20, 30, "VÀ ĐÓNG CỬA");
             u8g2.setFont(u8g2_font_resoledbold_tr);
-            u8g2.setCursor(30, 25);    
-            u8g2.printf("PLEASE LEAVE");
-            u8g2.setCursor(30, 40);    
-            u8g2.printf("THE PRODUCTS");
-            u8g2.setCursor(10, 55);    
-            u8g2.printf("IN INSIDE AND CLOSE");
+            u8g2.setCursor(5, 50);
+            u8g2.printf("PUT THE PRODUCT");
+            u8g2.setCursor(5, 60);
+            u8g2.printf("INSIDE & CLOSURE");
             u8g2.sendBuffer();
-            delay(5000);
         }
         void dang_tao_GD() //Đang tạo giao dịch
         {
@@ -228,6 +223,33 @@ namespace VHITEK
             u8g2.setFont(u8g2_font_resoledbold_tr);
             u8g2.setCursor(2, 50);
             u8g2.printf("GET ROTTEN MONEY BACK");
+            u8g2.sendBuffer();
+        }
+        void quet_ma_lay_SP() //Quét mã để lấy sản phẩm
+        {
+            u8g2.clearBuffer();
+            u8g2.drawFrame(0, 0, 128, 64);
+            u8g2.setFont(u8g2_font_unifont_t_vietnamese2);
+            u8g2.drawUTF8(38, 15, "QUÉT MÃ");
+            u8g2.drawUTF8(30, 30, "NHẬN HÀNG");
+            u8g2.setFont(u8g2_font_resoledbold_tr);
+            u8g2.setCursor(5, 50);
+            u8g2.printf("SCAN THE CODE");
+            u8g2.setCursor(5, 60);
+            u8g2.printf("FOR PICKUP");
+            u8g2.sendBuffer();
+        }
+        void nhan_hang_dong_cua() //Nhận hàng và đóng cửa
+        {
+            u8g2.clearBuffer();
+            u8g2.drawFrame(0, 0, 128, 64);
+            u8g2.setFont(u8g2_font_unifont_t_vietnamese2);
+            u8g2.drawUTF8(28, 15, "VUI LÒNG");
+            u8g2.drawUTF8(25, 30, "NHẬN HÀNG");
+            u8g2.drawUTF8(20, 45, "VÀ ĐÓNG CỬA");
+            u8g2.setFont(u8g2_font_resoledbold_tr);
+            u8g2.setCursor(10, 60);
+            u8g2.printf("PICKUP AND CLOSURE");
             u8g2.sendBuffer();
         }
 
@@ -314,10 +336,18 @@ namespace VHITEK
             {
                 if((uint32_t)(millis() - lastTick_page) > 5000)
                 {
+                    check_page = 3;
+                    lastTick_page = millis();
+                }
+            } 
+            else if(check_page==3)
+            {
+                if((uint32_t)(millis() - lastTick_page) > 5000)
+                {
                     check_page = 0;
                     lastTick_page = millis();
                 }
-            }      
+            }     
 
             if(check_page == 0) //Man hinh thoi gian
             {
@@ -376,6 +406,10 @@ namespace VHITEK
                 u8g2.setCursor(30, 50);    
                 u8g2.printf("TO SHIP");
                 u8g2.sendBuffer();   
+            }
+            else if(check_page == 3)  //Pgae 3
+            {
+                quet_ma_lay_SP(); //Quét mã để lấy hàng
             }
         }
 #endif

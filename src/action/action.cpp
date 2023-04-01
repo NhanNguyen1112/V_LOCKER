@@ -566,7 +566,7 @@ namespace VHITEK
         }
 #endif
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////// LOCKER SHIPPER SỬ DỤNG QR + MÁY IN NHIỆT + BILL /////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef Locker_Ship_Barcode
 
         cabine_config sender; cabine_config rece;
@@ -669,11 +669,11 @@ namespace VHITEK
                     http.begin(url); //Specify the URL
                     http.addHeader("Content-Type", "application/json");              
                     String json_data=VHITEK::Config::Json_His_Shipping(data);
-                    Serial.println(VHITEK::Config::Json_His_Shipping(data).c_str());
+                    // Serial.println(VHITEK::Config::Json_His_Shipping(data).c_str());
 
                     int post = http.POST(json_data.c_str());
                     String payload = http.getString();
-                    Serial.print("Send Trans: "); Serial.println(payload);          
+                    // Serial.print("Send Trans: "); Serial.println(payload);          
 
                     if (post == 200)  //Check for the returning code
                     { 
@@ -767,11 +767,6 @@ namespace VHITEK
         {
             char key = VHITEK::Keypad::getKey();
 
-            if((uint32_t)(millis() - tick_timeOUT) >= 60000*5) //sau 5 phút
-            {
-                back();
-            }
-
             if(step==0) //Tìm tủ chưa sử dụng
             {                               
                 if(CheckSend_Data == 0) //Kiểm tra máy in còn giấy không
@@ -838,6 +833,7 @@ namespace VHITEK
                 Display::mo_cua(sender.sotu);
                 delay(3000);
                 Display::de_hang_vao();
+                delay(3000);
                 step=3;
             }
             else if(step==3) //Lưu thông tin Sender
@@ -866,11 +862,6 @@ namespace VHITEK
         void NhanHang()
         {
             char key = VHITEK::Keypad::getKey();
-
-            if((uint32_t)(millis() - tick_timeOUT) >= 60000*5) //sau 5 phút
-            {
-                back();
-            }
             
             if(step==0)
             {
@@ -967,20 +958,9 @@ namespace VHITEK
             }
             else if(step==4) //Mở cửa
             {               
-                u8g2.clearBuffer();
-                u8g2.drawXBM(0, 0, 128, 64, DaMoTu_bits);
-                u8g2.setFont(u8g2_font_timB24_tf);
-                u8g2.setCursor(45, 50);
-                u8g2.printf("%02d", new_trans.so_tu);
-                u8g2.sendBuffer();
+                Display::mo_cua(new_trans.so_tu);
                 delay(3000);
-
-                u8g2.clearBuffer();
-                u8g2.drawXBM(0, 0, 128, 64, NhanHangVaDongCua_bits);
-                u8g2.setFont(u8g2_font_ncenB10_tr);
-                u8g2.setCursor(80, 20);
-                u8g2.print(new_trans.so_tu);
-                u8g2.sendBuffer();
+                Display::nhan_hang_dong_cua();
                 delay(3000);
 
                 if(VHITEK::transaction::save_trans(new_trans.so_tu, 1) == true)
@@ -990,27 +970,6 @@ namespace VHITEK
                   back();
                 } 
             }
-            else if(step==5) //Trả lại tiền đang ngậm
-            {                   
-                accessMDBBus([&]
-                {         
-                    // Serial.printf("Dang thoi tien\n");
-                    status = Validator.BV->payoutValue(VHITEK::BILL::soTienDaNhan, &soTienDaTraLai);
-                    // Serial.printf("soTienDaTraLai: %d - Status: %d\n", soTienDaTraLai, status);
-
-                    if (status == BV_CMD_SUCCESS)
-                    {
-                        // Serial.printf("Da thoi XONG\n");
-                        VHITEK::BILL::soTienDaNhan = VHITEK::BILL::soTienDaNhan-soTienDaTraLai;
-                        // Serial.printf("So tien da nhan: %ld - So tien tra lai: %d - Tienthoi: %d\n", soTienDaNhan, soTienDaTraLai, tienthoi);
-                        soTienDaTraLai=0;
-                        tienthoi=0;
-                        delay(5000);
-                        back();                                               
-                    }
-                },
-                2000);
-            }
 
             if(key)
             {
@@ -1018,21 +977,25 @@ namespace VHITEK
                 {   
                     while(VHITEK::BILL::soTienDaNhan>0)
                     {
-                        if (status == BV_CMD_SUCCESS)
-                        {
-                            // Serial.printf("DA TRA LAI TIEN\n");
-                            tienthoi=0;
-                            VHITEK::BILL::soTienDaNhan=VHITEK::BILL::soTienDaNhan-soTienDaTraLai;
-                            // Serial.printf("So tien da nhan: %ld - So tien tra lai: %ld\n", soTienDaNhan, soTienDaTraLai);
-                            status = -1;
-                            back();
-                            break;
-                        }
-                        else 
-                        {
-                            // Serial.printf("So tien da nhan: %ld - So tien tra lai: %ld\n", soTienDaNhan, soTienDaTraLai);
+                        VHITEK::Display::TB_thoi_tien();
+                        accessMDBBus([&]
+                        {         
+                            // Serial.printf("Dang thoi tien\n");
                             status = Validator.BV->payoutValue(VHITEK::BILL::soTienDaNhan, &soTienDaTraLai);
-                        }
+                            // Serial.printf("soTienDaTraLai: %d - Status: %d\n", soTienDaTraLai, status);
+
+                            if (status == BV_CMD_SUCCESS)
+                            {
+                                // Serial.printf("Da thoi XONG\n");
+                                VHITEK::BILL::soTienDaNhan = VHITEK::BILL::soTienDaNhan-soTienDaTraLai;
+                                // Serial.printf("So tien da nhan: %ld - So tien tra lai: %d - Tienthoi: %d\n", soTienDaNhan, soTienDaTraLai, tienthoi);
+                                soTienDaTraLai=0;
+                                tienthoi=0;
+                                delay(2000);
+                                back();                                               
+                            }
+                        },
+                        2000);
                     }
                     back();
                 }
@@ -1196,19 +1159,22 @@ namespace VHITEK
                         }
                     } 
                     else 
-                    {
+                    {                       
                         while(start_funct==1) //gửi hàng
                         {
+                            if((uint32_t)(millis() - tick_timeOUT) >= 60000*5) back(); //sau 5 phút
                             GuiHang();
                         }
                         
                         while(start_funct==2) //Nhận hàng
                         {   
+                            if((uint32_t)(millis() - tick_timeOUT) >= 60000*5) back(); //sau 5 phút
                             NhanHang();
                         }
 
                         while(start_funct==3) //Nhập MK để mở tủ
                         {
+                            if((uint32_t)(millis() - tick_timeOUT) >= 60000*5) back(); //sau 5 phút
                             MoTu();
                         }
                     }

@@ -70,7 +70,7 @@ uint8_t temprature_sens_read();
     #define Use_Music
     #endif
 
-    #define Locker_Ship_Barcode //Locker gửi/nhận hàng dùng 1 nút nhấn, bill, đầu đọc QR + máy in nhiệt
+    #define Locker_Ship_Barcode //Locker gửi/nhận hàng dùng 1 nút nhấn, bill, đầu đọc QR + máy in nhiệt + Music
     #ifdef Locker_Ship_Barcode
     #define Use_QR
     #define Use_Printer
@@ -392,7 +392,6 @@ namespace VHITEK
         String xuatbarcode(uint16_t sotu);       
         int xuat_sotu(String data);
         void QR_VNP(String QR); //Hiện QR VNP 
-        void HT_QR(String QR);
 
         String loadChipID();
         int get_temp(); //đọc nhiệt độ ESP32
@@ -467,6 +466,8 @@ namespace VHITEK
         void dang_tao_GD(); //Đang tạo giao dịch
         void mo_cua(uint16_t sotu); //Mở cửa
         void TB_thoi_tien(); //TB thối tiền
+        void quet_ma_lay_SP(); //Quét mã nhận hàng
+        void nhan_hang_dong_cua(); //Nhận hàng và đóng cửa
     }
 
     namespace Keypad

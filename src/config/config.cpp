@@ -10,33 +10,7 @@ namespace VHITEK
 
         void decodeID(uint16_t sotu_INPUT, uint16_t &id, uint16_t &add);
 
-        void Send_Printer(uint16_t add, uint16_t sotu, String data)
-        {
-            doc.clear();
-            
-            doc["add"] = add;
-            doc["cmd"] = "printer";
-            doc["id"] = sotu;
-            doc["barcode"] = data;
-
-            Serial2.write(0x7F);
-            serializeJson(doc, Serial2);
-            Serial2.write(0x7E);
-        }
-        void Send_Music(uint16_t add, uint16_t sobaihat, uint16_t timeout)
-        {
-            doc.clear();
-            
-            doc["add"] = add;
-            doc["cmd"] = "music";
-            doc["id"] = sobaihat;
-            doc["timeout"] = timeout;
-
-            Serial2.write(0x7F);
-            serializeJson(doc, Serial2);
-            Serial2.write(0x7E);
-        }
-
+/////////////////// Hàm liên quan đến đóng mở các tủ ///////////////////////////////////////////////////////////////////////////////
         void Json_Open_Locker(uint16_t add, uint16_t sotu)
         {
             doc.clear();
@@ -117,7 +91,76 @@ namespace VHITEK
                 }
             }
         }
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+
+//////////////////// Các hàm liên quan đến SHIPPER LOCKER ///////////////////////////////////////////////////////////////////////////
+        #ifdef Use_Printer
+        void Send_Printer(uint16_t add, uint16_t sotu, String data)
+        {
+            doc.clear();
+            
+            doc["add"] = add;
+            doc["cmd"] = "printer";
+            doc["id"] = sotu;
+            doc["barcode"] = data;
+
+            Serial2.write(0x7F);
+            serializeJson(doc, Serial2);
+            Serial2.write(0x7E);
+        }
+        #endif
+
+        #ifdef Use_Music
+        void Send_Music(uint16_t add, uint16_t sobaihat, uint16_t timeout)
+        {
+            doc.clear();
+            
+            doc["add"] = add;
+            doc["cmd"] = "music";
+            doc["id"] = sobaihat;
+            doc["timeout"] = timeout;
+
+            Serial2.write(0x7F);
+            serializeJson(doc, Serial2);
+            Serial2.write(0x7E);
+        }
+        #endif
+
+        #if defined(Locker_Shipping) || defined(Locker_Ship_Barcode)
+        String Json_vnpay_neworder(uint32_t IDX, int32_t tongtien, int32_t random) //Tạo giao dich VNPAY moi 
+        {
+            DynamicJsonDocument doc(10000);
+            char rData[2048];
+
+            doc["mTransactionId"] = IDX;
+            doc["transactionId"] = random;
+            doc["amount"] = tongtien;
+            doc["col"] = 0;
+            doc["mID"] = apSSID;
+
+            serializeJson(doc, rData);
+            return String(rData);
+        }
+        String Json_vnpay_check(uint32_t IDX, int32_t random) //Thực hiện thanh toán
+        {
+            DynamicJsonDocument doc(10000);
+            char rData[2048];
+
+            doc["mTransactionId"] = IDX;
+            doc["transactionId"] = random;
+            doc["mID"] = apSSID;
+
+            serializeJson(doc, rData);
+            return String(rData);
+        }
+        #endif
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+/////////////////// CÁC HÀM DÙNG CHUNG /////////////////////////////////////////////////////////////////////////////////////////////////
         String Json_His_Shipping(cabine_transac data) //lich su giao dich
         {
             DynamicJsonDocument doc(10000);
@@ -202,33 +245,9 @@ namespace VHITEK
             serializeJson(doc, rData);
             return String(rData);  
         }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        String Json_vnpay_neworder(uint32_t IDX, int32_t tongtien, int32_t random) //Tạo giao dich VNPAY moi 
-        {
-            DynamicJsonDocument doc(10000);
-            char rData[2048];
 
-            doc["mTransactionId"] = IDX;
-            doc["transactionId"] = random;
-            doc["amount"] = tongtien;
-            doc["col"] = 0;
-            doc["mID"] = apSSID;
-
-            serializeJson(doc, rData);
-            return String(rData);
-        }
-        String Json_vnpay_check(uint32_t IDX, int32_t random) //Thực hiện thanh toán
-        {
-            DynamicJsonDocument doc(10000);
-            char rData[2048];
-
-            doc["mTransactionId"] = IDX;
-            doc["transactionId"] = random;
-            doc["mID"] = apSSID;
-
-            serializeJson(doc, rData);
-            return String(rData);
-        }
 
         String loadChipID()
         {
@@ -263,33 +282,6 @@ namespace VHITEK
             // Serial.println(" C");
             // delay(1000);
         }
-
-        /*void xem_eeprom_tu_bat_ky(int so_tu){ //XEM EEPROM 1 tu bat ky
-            user_setting doc_id;
-            int vitri=0;
-            uint16_t o_luu_bat_dau;
-
-            o_luu_bat_dau = VHITEK::Menu::tinh_o_luu_the(so_tu);
-
-            doc_id = VHITEK::EEPROM::read_eeprom_1(so_tu);
-
-            Serial.print("So tu: "); Serial.print(doc_id.so_tu);
-            Serial.print(" - ID: ");
-            for(int i=0; i< 13; i++)
-            {
-                // Serial.printf("%02x ",doc_id.ID_user[i]);
-                Serial.print(doc_id.ID_user[i]-'0');
-            }
-
-            Serial.print(" - MK: ");
-            for(int i=0; i< 10; i++)
-            {
-                Serial.print(doc_id.mat_khau[i]-'0');
-            }  
-            Serial.print(" - Send data: "); Serial.print(doc_id.send_data_check); //check send data
-            Serial.print(" - SUM: "); Serial.print(doc_id.check_sum); //check SUM       
-            Serial.println();     
-        } */
 
         int so_sanh_mk_menu(char *mk)
         {
@@ -426,43 +418,6 @@ namespace VHITEK
         }
 
         void QR_VNP(String QR) //Hiện QR VNP
-        {
-            QRCode qrcode;
-            uint8_t LCDType = 1;
-            uint8_t qrcodeData[qrcode_getBufferSize(11)];
-            char wQR[2000];
-            sprintf(wQR, "%s", QR.c_str());
-            qrcode_initText(&qrcode, qrcodeData, 9, ECC_MEDIUM, wQR);
-
-            u8g2.clearBuffer();
-            if (LCDType)    u8g2.drawBox(0, 0, 64, 64);
-            const uint8_t y0 = (64 - qrcode.size) / 2;
-            const uint8_t x0 = (64 - qrcode.size) / 2;
-            for (uint8_t y = 0; y < qrcode.size; y++)
-            {
-                for (uint8_t x = 0; x < qrcode.size; x++)
-                {
-                    if (qrcode_getModule(&qrcode, x, y))
-                    {
-                        if (LCDType == 0)
-                            u8g2.setColorIndex(1);
-                        else
-                            u8g2.setColorIndex(0);
-                    }
-                    else
-                    {
-                        if (LCDType == 0)
-                            u8g2.setColorIndex(0);
-                        else
-                            u8g2.setColorIndex(1);
-                    }
-                    u8g2.drawPixel(x0 + x, y0 + y);
-                }
-            }
-            u8g2.setColorIndex(1);
-        }
-
-        void HT_QR(String QR)
         {
             QRCode qrcode;
             uint8_t LCDType = 1;
