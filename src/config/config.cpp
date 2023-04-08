@@ -51,7 +51,13 @@ namespace VHITEK
         {
             decodeID(sotu, addIO, sotuIO);
             Json_Open_Locker(addIO, sotuIO);
-            return read_locker(sotu);
+            // return read_locker(sotu);
+            flag_status = 1;
+            if(flag_status == 2)
+            {
+                flag_status=0;
+                return ReadIO.status;
+            }
         }
 
         // Hàm viết cho hành động mở tủ
@@ -155,12 +161,6 @@ namespace VHITEK
             serializeJson(doc, rData);
             return String(rData);
         }
-        #endif
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-/////////////////// CÁC HÀM DÙNG CHUNG /////////////////////////////////////////////////////////////////////////////////////////////////
         String Json_His_Shipping(cabine_transac data) //lich su giao dich
         {
             DynamicJsonDocument doc(10000);
@@ -187,7 +187,49 @@ namespace VHITEK
             serializeJson(doc, rData);
             return String(rData);
         }
+        #endif
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+///////////////////// CÁC HÀM DÙNG CHO LOCKER NỘI BỘ ////////////////////////////////////////////////////////////////////////////////////
+        #ifdef Locker_NoiBo
+        String Json_thong_tin_tu(cabine_config user) //Tao Json thong tin tu
+        {
+            DynamicJsonDocument doc(10000);
+            char rData[2048];
+
+            doc["lockerid"] = user.sotu;
+            doc["cardid"] = user.ID_user;
+            doc["password"] = user.mat_khau;
+            doc["lockermachineid"] = apSSID;
+
+            serializeJson(doc, rData);
+            return String(rData);             
+        }
+
+        String Json_His_NB(cabine_transac data) //lich su giao dich
+        {
+            DynamicJsonDocument doc(10000);
+            char rData[2048];
+            char dateBuf[25];
+
+            sprintf(dateBuf, "%04d-%02d-%02dT%02d:%02d:00.546715",
+                    data.time_receive.nam, data.time_receive.thang, data.time_receive.ngay, data.time_receive.gio, data.time_receive.phut);
+
+            doc["IDX"] = data.IDX;
+            doc["Status"] = data.status_cabine;
+            doc["lockerid"] = data.so_tu;
+            doc["DataCheck"] = data.send_data;
+            doc["IdCard"] = data.RFID;
+            doc["Time"] = dateBuf;
+            doc["MID"] = apSSID;
+            serializeJson(doc, rData);
+            return String(rData);
+        }
+        #endif
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/////////////////// CÁC HÀM DÙNG CHUNG /////////////////////////////////////////////////////////////////////////////////////////////////
         String Json_tong_tu() //Tao Json tong so tu
         {
             DynamicJsonDocument doc(10000);
@@ -199,20 +241,6 @@ namespace VHITEK
             serializeJson(doc, rData);
             return String(rData);            
         }
-
-        /*String Json_thong_tin_tu(user_setting user) //Tao Json thong tin tu
-        {
-            DynamicJsonDocument doc(10000);
-            char rData[2048];
-
-            doc["lockerid"] = user.so_tu;
-            doc["cardid"] = user.ID_user;
-            doc["password"] = user.mat_khau;
-            doc["lockermachineid"] = apSSID;
-
-            serializeJson(doc, rData);
-            return String(rData);             
-        }*/
 
         String Json_machine_status() //Tao Json tinh trang may
         {

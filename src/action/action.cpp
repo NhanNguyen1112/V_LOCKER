@@ -115,6 +115,49 @@ namespace VHITEK
 #endif
 
 #ifdef Locker_NoiBo
+        
+        void Send_His_NB(cabine_transac data, uint32_t diachi)
+        {
+            if ((WiFi.status() == WL_CONNECTED))  //GUI lich su hanh dong mo cua len Server
+            {
+                if(data.send_data == 1) //chưa gửi
+                {
+                    DynamicJsonDocument doc(10000);
+                    char url[1024];
+                    HTTPClient http;
+                    sprintf(url, "http://%s:8000/locker/sethistorytransactionlocker", API);
+                    http.begin(url); //Specify the URL
+                    http.addHeader("Content-Type", "application/json");              
+                    String json_data=VHITEK::Config::Json_His_NB(data);
+                    // Serial.println(VHITEK::Config::Json_His_Shipping(data).c_str());
+
+                    int post = http.POST(json_data.c_str());
+                    String payload = http.getString();
+                    // Serial.print("Send Trans: "); Serial.println(payload);          
+
+                    if (post == 200)  //Check for the returning code
+                    { 
+                        DeserializationError error = deserializeJson(doc, payload);
+                        if (error == 0)
+                        {
+                            // Serial.println(doc["status"].as<String>());
+                            if(doc["status"].as<boolean>() == true) //NEU da gui duoc
+                            {
+                                data.send_data = 0;
+
+                                if(VHITEK::EEPROM::write_eeprom_2(data, diachi)==true)
+                                {
+                                    Serial.println("Da gui duoc transaction");
+                                    // VHITEK::Config::xem_eep_TranSac(diachi_giaodich);
+                                }             
+                            }
+                        }
+                    }
+                    http.end();
+                }
+            }
+        }
+        
         bool Doi_pass(cabine_config user_check) //Kiểm tra & ĐỔI MK
         {
             cabine_config doc_id;
@@ -213,10 +256,8 @@ namespace VHITEK
             else // Man hinh chinh: hien thi Ngay, Gio; Check Update Firmware 30s 1 lan
             {
                 ID = 0;
-                if (VHITEK::FOTA::check_update_FOTA == true)
-                    VHITEK::Display::TB_update_FOTA();
-                else
-                    VHITEK::Display::hien_ngay_gio();
+                if (VHITEK::FOTA::check_update_FOTA == true) VHITEK::Display::TB_update_FOTA();
+                else VHITEK::Display::hien_ngay_gio();
             }
 
             while (step == 1)
@@ -486,7 +527,6 @@ namespace VHITEK
                         u8g2.sendBuffer();
 
                         VHITEK::transaction::save_trans(user_check.sotu, 1);
-                        // VHITEK::transaction::luu_hanh_dong(so_tu_vua_nhap, trang_thai_cua); // 0 la ĐÓNG, 1 la MỞ
 
                         check_update_machine = true;
 

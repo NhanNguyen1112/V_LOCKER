@@ -253,8 +253,7 @@ namespace VHITEK
             u8g2.sendBuffer();
         }
 
-
-#ifdef mocua
+        #ifdef mocua
         void hien_ngay_gio() //Hien thi ngay, gio tai man hinh chinh
         {
             static uint64_t lastTick=0;
@@ -302,7 +301,76 @@ namespace VHITEK
             #endif                                    
             u8g2.sendBuffer();                
         }
-#else 
+        #endif
+
+        #ifdef Locker_NoiBo
+        void hien_ngay_gio() //Hien thi ngay, gio tai man hinh chinh
+        {
+            static uint64_t lastTick=0;
+            static uint64_t lastTick_page=0;
+            static bool check=0;
+            static bool check_page=0;
+
+            if((uint32_t)(millis() - lastTick) > 2000)
+            {
+                check = !check;
+                lastTick = millis();
+            }
+            if((uint32_t)(millis() - lastTick_page) > 8000)
+            {
+                check_page = !check_page;
+                lastTick_page = millis();
+            }         
+
+            if(check_page == 0)
+            {
+                u8g2.clearBuffer();
+                u8g2.drawFrame(0, 0, 128, 64);
+                u8g2.enableUTF8Print();
+                u8g2.setFont(u8g2_font_resoledbold_tr);
+                u8g2.setFontDirection(0);
+                if(check == 0)
+                {
+                    u8g2.setCursor(35,10);
+                    u8g2.printf("%02d/%02d/%02d", thoi_gian.ngay, thoi_gian.thang,thoi_gian.nam);   
+                }
+                else 
+                {
+                    u8g2.setFont(u8g2_font_profont10_mf);
+                    u8g2.setCursor(5,10);
+                    u8g2.print("Wifi:");
+                    u8g2.setCursor(30,10);
+                    u8g2.print(WiFi.SSID());
+                    u8g2.setCursor(105,10);
+                    u8g2.print(VHITEK::Config::Wifi_RSSI()); 
+                    u8g2.setFont(u8g2_font_resoledbold_tr);   
+                    u8g2.setCursor(120,10);
+                    u8g2.print("%");  
+                }
+                u8g2.setFont(u8g2_font_timB24_tf);   
+                u8g2.setCursor(27, 41);
+                u8g2.printf("%02d:%02d", thoi_gian.gio, thoi_gian.phut); 
+
+                u8g2.setFont(u8g2_font_ncenB10_tr);
+                #ifdef logoVHITEK
+                u8g2.setCursor(20, 60);
+                u8g2.printf(logoVHITEK);  
+                #else
+                u8g2.setCursor(10, 60);    
+                u8g2.printf(logoTSE); 
+                #endif                                   
+                u8g2.sendBuffer(); 
+            } 
+            else 
+            {
+                u8g2.clearBuffer();
+                u8g2.drawXBM(0, 0, 128, 64, xinchaomoichontu_bits);                       
+                u8g2.sendBuffer();
+            }              
+        }
+        #endif
+
+        #ifdef Locker_Ship_Barcode
         void hien_ngay_gio() //Hien thi ngay, gio tai man hinh chinh
         {
             static uint64_t lastTick=0;
@@ -412,7 +480,7 @@ namespace VHITEK
                 quet_ma_lay_SP(); //Quét mã để lấy hàng
             }
         }
-#endif
+        #endif
 
         //Hiển thị màn hình nhập số tủ
         // đối số đưa vào là key data

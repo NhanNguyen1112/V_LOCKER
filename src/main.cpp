@@ -212,10 +212,12 @@ namespace VHITEK
   {
     DynamicJsonDocument doc(10000);
     cabine_transac trans_read;
+    cabine_config UID;
     uint32_t lastTick_FOTA=0;
     uint32_t lastTick_wifi=0;
     uint32_t lastTick_status_machine=0;
     uint32_t lastTick_Cal_Money=0;
+    uint32_t lastTick_card_info=0;
     uint32_t diachi=0;
 
     while(1)
@@ -330,7 +332,9 @@ namespace VHITEK
           {
             if(trans_read.send_data == 1) //Chưa gửi lên Server
             {
+              #if defined(Locker_Shipping) || defined(Locker_Ship_Barcode)
               VHITEK::ACTION::Send_His(trans_read, diachi);
+              #endif
             }
           }
           diachi+=sizeof(cabine_transac);
@@ -338,6 +342,7 @@ namespace VHITEK
         else diachi=0;
       }
 
+      #if defined(Locker_Shipping) || defined(Locker_Ship_Barcode)
       if((WiFi.status() == WL_CONNECTED)) //Doc cai dat gia thue tu Server
       {
         // bill_price_setup Price_read;
@@ -382,6 +387,87 @@ namespace VHITEK
           lastTick_Cal_Money = millis();
         }
       }
+      #endif
+
+      #ifdef Locker_NoiBo
+      if((WiFi.status() == WL_CONNECTED))  //Gui thong tin tu len Server
+      {
+        if ((uint32_t)(millis() - lastTick_card_info) > 5000) //5s gui len 1 lan
+        {
+          char url[1024];
+          HTTPClient http;
+          sprintf(url, "http://%s:8000/locker/updateinforcard", API);
+          http.begin(url); //Specify the URL
+          http.addHeader("Content-Type", "application/json");        
+
+          for(int sotu=1; sotu<=save_config_machine.tongtu; sotu++) 
+          {
+            UID  = EEPROM::read_EEP_1_Cabine(sotu);
+            // accessI2C1Bus([&]{
+            //       EEPROM::myMem.get(VHITEK::Config::tinh_o_luu_the(sotu), UID); //Doc Check SUM trong eeprom              
+            // }, 100);
+
+            if(UID.send_data == 1) //Them tu moi va gui len Server
+            {
+              String json_data = VHITEK::Config::Json_thong_tin_tu(UID);    
+              int post = http.POST(json_data.c_str());
+              String payload = http.getString();     
+              if (post == 200)  //Check for the returning code
+              { 
+                DeserializationError error = deserializeJson(doc, payload);
+                if (error == 0)
+                {
+                  // Serial.println(doc["status"].as<String>());
+                  if(doc["status"].as<boolean>() == true) //NEU da gui duoc
+                  {     
+                    UID.send_data=0;
+                    if(VHITEK::EEPROM::write_EEP_1_Cabine(UID))
+                    {
+                      // VHITEK::Config::xem_eeprom_tu_bat_ky(sotu); //Xem eeprom khi da luu
+                      Serial.println("Đã gửi được TT tủ");     
+                    }           
+                  }
+                }
+                http.end();            
+              }
+            }
+            else if(UID.send_data == 2) //Xoa va gui len server
+            {
+              memset(&UID, 0, sizeof(UID));       
+              UID.sotu = sotu;
+              UID.ID_user[0] = '0';
+              UID.mat_khau[0] = '0';   
+
+              String json_data = VHITEK::Config::Json_thong_tin_tu(UID);    
+              int post = http.POST(json_data.c_str());
+              String payload = http.getString();  
+              // Serial.println(VHITEK::Config::Json_thong_tin_tu(user_ID).c_str());
+
+              if (post == 200)  //Check for the returning code
+              { 
+                DeserializationError error = deserializeJson(doc, payload);
+                if (error == 0)
+                {
+                  // Serial.println(doc["status"].as<String>());
+                  if(doc["status"].as<boolean>() == true) //NEU da gui duoc
+                  {     
+                    // memset(&UID, 0, sizeof(UID));
+                    // accessI2C1Bus([&]{
+                    //       myMem.put(VHITEK::Config::tinh_o_luu_the(sotu), UID); //Doc Check SUM trong eeprom              
+                    // }, 100);
+                    // VHITEK::Config::xem_eeprom_tu_bat_ky(sotu); //Xem eeprom khi da luu
+                    // Serial.println("Đã gửi được: XÓA");                                                  
+                  }
+                }
+              }
+              http.end(); 
+            }
+
+          } //END For
+          lastTick_card_info = millis();
+        }
+      }
+      #endif
 
       delay(10);
     }
@@ -474,6 +560,7 @@ void loop()
         {
           if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_QR) //Module QR
           {
+            #ifdef Use_QR
             if(VHITEK::ACTION::start_funct == 0)
             {
               VHITEK::QRread.add = add;
@@ -481,6 +568,7 @@ void loop()
               VHITEK::QRread.check_sum = doc["crc"].as<uint16_t>();
               VHITEK::ACTION::start_funct = 2;
             }
+            #endif
           }
           else if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_Music) //Music
           {
@@ -488,10 +576,12 @@ void loop()
           }
           else if(add == VHITEK::save_config_machine.Sub_boar.Add_Module_Printer) //printer
           {
+            #ifdef Use_Printer
             // Serial.println(doc["state"].as<String>().c_str());
             state = doc["state"].as<String>().c_str();
             if(state == "OK") VHITEK::ACTION::CheckSend_Data = 1;
             else if(state == "NOPAPER") VHITEK::ACTION::CheckSend_Data = 2;
+            #endif
           }
           else //Các board IO
           {

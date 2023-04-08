@@ -210,7 +210,6 @@ namespace VHITEK
         uint8_t Add_Module_Music;
 
         uint64_t chua_su_dung1;
-        char chua_su_dung2[100];
     }Setting_Board_SUB;
 
     typedef struct //cài đặt máy: kích thước 816 byte; lưu ô 1000
@@ -374,8 +373,9 @@ namespace VHITEK
         void Send_Music(uint16_t add, uint16_t sobaihat, uint16_t timeout);
 
         String Json_His_Shipping(cabine_transac data); //lich su giao dich
+        String Json_His_NB(cabine_transac data); //lich su giao dich Nội Bộ
         String Json_tong_tu(); //Tao Json tong so tu
-        // String Json_thong_tin_tu(user_setting user); //Tao Json thong tin tu
+        String Json_thong_tin_tu(cabine_config user); //Tao Json thong tin tu
         String Json_machine_status(); //Tao Json tinh trang may
         String Json_vnpay_neworder(uint32_t IDX, int32_t tongtien, int32_t random); //Tạo giao dich VNPAY moi
         String Json_vnpay_check(uint32_t IDX, int32_t random); //Thực hiện thanh toán

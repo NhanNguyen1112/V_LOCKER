@@ -31,6 +31,8 @@
                 {"add":"4","cmd":"read","id":"7"}
 
     - Slave: {"addMas":"1", "add":"4", "id":"7","status":"0/1"}
+                                                    1 = True: Mở cửa thành công / Đang mở cửa 
+                                                    0 = False: Mở cửa không thành công / Đang đóng cửa
 
 
 

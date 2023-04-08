@@ -120,18 +120,7 @@ namespace VHITEK
                 
                 // Serial.printf("last idx: %d - readIDX: %d\n", last_IDX, read_trans.IDX);
                 if(read_trans.IDX>=0)
-                {
-                    // if(last_IDX>read_trans.IDX) //5>3
-                    // {
-                    //     IDX_hien_tai = last_IDX+1;
-                    //     if(i>=63000) dia_chi_IDX_hien_tai = 0;
-                    //     else dia_chi_IDX_hien_tai += sizeof(cabine_transac);
-                    //     // Serial.print(" - doc IDX OK: "); Serial.print(doc_idx);
-                    //     // Serial.print(" - diachi OK: "); Serial.println(i);                       
-                    //     break;
-                    // }
-                    // else 
-
+                {                    
                     if(last_IDX<=read_trans.IDX)
                     {
                         // Serial.print(" - doc IDX: "); Serial.print(doc_idx);

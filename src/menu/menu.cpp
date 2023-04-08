@@ -724,7 +724,7 @@ namespace VHITEK
                 }
                 else //hien thong bao da luu thanh cong
                 { 
-                    // user_ID.send_data_check = 1;
+                    userID.send_data = 1;
                     if(VHITEK::EEPROM::write_EEP_1_Cabine(userID)==true) //Dung
                     {
                         // VHITEK::Config::KT_tong_tu_chua_SD();
@@ -878,6 +878,7 @@ namespace VHITEK
                     // Serial.printf("bat dau: %d - ket thuc: %d",o_luu, o_luu+29);
 
                     // VHITEK::Config::xem_eeprom_tu_bat_ky(so_tu);
+                    user_clear.send_data = 2;
                     accessI2C1Bus([&]{
                         EEPROM::myMem.put(o_luu, user_clear);   
                     }, 100);
@@ -995,16 +996,14 @@ namespace VHITEK
                 u8g2.setCursor(25,45);
                 u8g2.printf("TAT CA CAC TU");   
                 u8g2.sendBuffer();  
-
                 for(int i=1; i<=save_config_machine.tongtu; i++)
                 {
+                    user_clear.send_data = 2;
                     accessI2C1Bus([&]{
                         EEPROM::myMem.put(VHITEK::Config::tinh_o_luu_the(i), user_clear);   
                     }, 100);                                      
                 }      
-
                 VHITEK::Config::KT_tong_tu_chua_SD();
-
                 VHITEK::Keypad::clearKeypad(keydata, 6);
                 reInit = true;
                 step=0;
